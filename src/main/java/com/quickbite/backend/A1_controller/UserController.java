@@ -1,5 +1,6 @@
 package com.quickbite.backend.A1_controller;
 
+import com.quickbite.backend.A2_service.CartService;
 import com.quickbite.backend.A2_service.UserService;
 import com.quickbite.backend.dto.*;
 import jakarta.validation.Valid;
@@ -13,6 +14,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CartService cartService;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -78,6 +82,13 @@ public class UserController {
         return ResponseEntity.status(200).body(res);
     }
 
+
+    // add to cart
+    @PostMapping("/customers/cart/items")
+    public ResponseEntity<String> addToCart(@RequestBody AddToCartDTO addToCartItem){
+        String res = cartService.addToCart(addToCartItem);
+        return ResponseEntity.status(200).body(res);
+    }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

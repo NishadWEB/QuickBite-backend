@@ -56,11 +56,11 @@ public class UserService {
         user.setRole("ROLE_USER");
 
         try {
-            userRepo.save(user);
-
             String subject = "Welcome to QuickBite \uD83C\uDF89";
             String message = "Congratulations!\nWelcome to the quickbite community as a customer.";
             emailService.sendMail(user.getEmail(), subject, message);
+            userRepo.save(user);
+
             return "successfully registered you as our customer.";
         } catch (DataIntegrityViolationException e) {
             log.error("error is : " + e);
