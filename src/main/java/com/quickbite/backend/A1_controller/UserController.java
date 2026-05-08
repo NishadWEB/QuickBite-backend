@@ -108,4 +108,12 @@ public class UserController {
         String res = userService.loginRestaurant(request);
         return ResponseEntity.status(200).body(res);
     }
+
+    // deleting restaurant account
+    @DeleteMapping("/restaurants/me")
+    public ResponseEntity<String> deleteRestaurantAccount(@Valid @RequestBody PasswordDTO request) {
+        String res = userService.deleteRestaurantAccount(request);
+        return ResponseEntity.status(200).body(res);
+
+    }
 }

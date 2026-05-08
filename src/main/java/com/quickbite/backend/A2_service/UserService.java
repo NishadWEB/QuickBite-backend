@@ -283,4 +283,26 @@ public class UserService {
         }
         return null;
     }
+
+    public String deleteRestaurantAccount(PasswordDTO request) {
+        String enteredPassword = request.getPassword();
+
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        String actualPassword = user.getPassword();
+
+        if (passwordEncoder.matches(enteredPassword, actualPassword)) {
+            try {
+                userRepo.deleteById(userId);
+                return "Your Restaurant account deleted successfully";
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new InvalidInputException("Invalid password");
+        }
+    }
 }
