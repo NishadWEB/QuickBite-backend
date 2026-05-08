@@ -80,6 +80,7 @@ public class UserController {
     public ResponseEntity<String> deleteCustomerAccount(@Valid @RequestBody PasswordDTO request) {
         String res = userService.deleteCustomerAccount(request);
         return ResponseEntity.status(200).body(res);
+
     }
 
 
@@ -96,8 +97,9 @@ public class UserController {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-//    @PostMapping("/register/restaurant")
-//    public ResponseEntity<String> registerRestaurant(@Valid @RequestBody RegisterRequest request){
-//        String res = userService.registerRestaurant(request);
-//    }
+    @PostMapping("/auth/register/restaurant")
+    public ResponseEntity<String> registerRestaurant(@Valid @RequestBody RegisterRequest request){
+        String res = userService.registerRestaurant(request);
+        return ResponseEntity.status(201).body(res);
+    }
 }

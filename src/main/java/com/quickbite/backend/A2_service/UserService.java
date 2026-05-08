@@ -21,6 +21,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
@@ -43,6 +44,7 @@ public class UserService {
     @Autowired
     private EmailService emailService;
 
+    @Transactional
     public String registerCustomer(RegisterRequest request) {
         if (request.getPassword().length() < 8) {
             throw new InvalidInputException("password length must be 8 characters");
@@ -56,15 +58,16 @@ public class UserService {
         user.setRole("ROLE_USER");
 
         try {
+            userRepo.save(user);
+
             String subject = "Welcome to QuickBite \uD83C\uDF89";
             String message = "Congratulations!\nWelcome to the quickbite community as a customer.";
             emailService.sendMail(user.getEmail(), subject, message);
-            userRepo.save(user);
 
             return "successfully registered you as our customer.";
         } catch (DataIntegrityViolationException e) {
             log.error("error is : " + e);
-            throw new AlreadyExistsException("User already exists!");
+            throw new AlreadyExistsException("User with the email id '" +request.getEmail()+"' already exists!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -225,4 +228,38 @@ public class UserService {
     }
 
 
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RESTAURANT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    @Transactional
+    public String registerRestaurant(RegisterRequest request) {
+        if (request.getPassword().length() < 8) {
+            throw new InvalidInputException("password length must be 8 characters");
+        }
+
+        AppUser user = new AppUser();
+        user.setName(request.getName().toLowerCase());
+        user.setEmail(request.getEmail());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setPhone(request.getPhone());
+        user.setRole("ROLE_ADMIN");
+
+
+        try {
+            userRepo.save(user);
+            String subject = "Welcome to QuickBite \uD83C\uDF89";
+            String message = "Congratulations!\nWelcome to the quickbite community as a Restaurant Owner.\nYou can partner with us by creating the restaurant-profile";
+            emailService.sendMail(user.getEmail(), subject, message);
+
+            return "successfully registered you as a Restaurant owner.";
+        } catch (DataIntegrityViolationException e) {
+            log.error("error is : " + e);
+            throw new AlreadyExistsException("Restaurant with the email id '" +request.getEmail()+"' already exists!");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
