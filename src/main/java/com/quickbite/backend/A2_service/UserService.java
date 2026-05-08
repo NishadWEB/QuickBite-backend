@@ -262,4 +262,25 @@ public class UserService {
             throw new RuntimeException(e);
         }
     }
+
+    public String loginRestaurant(LoginRequest request) {
+        Authentication authObj1 = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
+        Authentication authObj2;
+
+        try {
+            authObj2 = authenticationManager.authenticate(authObj1);
+        } catch (BadCredentialsException | UsernameNotFoundException e) {
+            throw new BadCredentialsException("Invalid email or pass");
+        } catch (Exception e) {
+            log.error("error in login is : " + e);
+            throw new RuntimeException(e);
+        }
+
+        if (authObj2.isAuthenticated()) {
+            UserPrincipal userDetails = (UserPrincipal) authObj2.getPrincipal();
+            Date expiry = new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24); // 24 hours expiry
+            return jwtService.generateToken(userDetails, expiry);
+        }
+        return null;
+    }
 }

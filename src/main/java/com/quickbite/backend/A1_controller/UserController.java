@@ -102,4 +102,10 @@ public class UserController {
         String res = userService.registerRestaurant(request);
         return ResponseEntity.status(201).body(res);
     }
+
+    @PostMapping("/auth/login/restaurant")
+    public ResponseEntity<String> loginRestaurant(@Valid @RequestBody LoginRequest request) {
+        String res = userService.loginRestaurant(request);
+        return ResponseEntity.status(200).body(res);
+    }
 }
