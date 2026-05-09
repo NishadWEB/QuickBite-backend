@@ -44,7 +44,7 @@ public class UserController {
     }
 
     @GetMapping("/customers/email")
-    public ResponseEntity<String> verifyEmail(@RequestParam String token, @RequestParam String newEmail) {
+    public ResponseEntity<String> verifyCustomerEmail(@RequestParam String token, @RequestParam String newEmail) {
         String res = userService.verifyEmail(token, newEmail);
         return ResponseEntity.status(200).body(res);
     }
@@ -97,12 +97,14 @@ public class UserController {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    // register restaurant
     @PostMapping("/auth/register/restaurant")
     public ResponseEntity<String> registerRestaurant(@Valid @RequestBody RegisterRequest request){
         String res = userService.registerRestaurant(request);
         return ResponseEntity.status(201).body(res);
     }
 
+    // login restaurant
     @PostMapping("/auth/login/restaurant")
     public ResponseEntity<String> loginRestaurant(@Valid @RequestBody LoginRequest request) {
         String res = userService.loginRestaurant(request);
@@ -114,6 +116,19 @@ public class UserController {
     public ResponseEntity<String> deleteRestaurantAccount(@Valid @RequestBody PasswordDTO request) {
         String res = userService.deleteRestaurantAccount(request);
         return ResponseEntity.status(200).body(res);
-
     }
+
+    // update customer-email
+    @PatchMapping("/restaurants/email")
+    public ResponseEntity<String> updateRestaurantEmail(@Valid @RequestBody NewEmailDTO request){
+        userService.updateEmail(request);
+        return ResponseEntity.status(200).body("Confirm to update the email by clicking the link sent via gmail...");
+    }
+
+    @GetMapping("/restaurants/email")
+    public ResponseEntity<String> verifyRestaurantEmail(@RequestParam String token, @RequestParam String newEmail) {
+        String res = userService.verifyEmail(token, newEmail);
+        return ResponseEntity.status(200).body(res);
+    }
+
 }

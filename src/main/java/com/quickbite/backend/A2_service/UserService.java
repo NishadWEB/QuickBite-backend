@@ -109,7 +109,7 @@ public class UserService {
 
         String link = "http://localhost:8080/api/v1/customers/email?token=" + token + "&newEmail=" + newEmail;
 
-        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User doesnt exists!"));
+        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User does'nt exists!"));
 
         String to = user.getEmail();
         String subject = "Confirm email update";
