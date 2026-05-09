@@ -61,15 +61,15 @@ public class UserController {
     // forget password (outside the login)
     // user sends email -> server sends confirmation email -> user clicks it -> re-routes to frontend page with newPassword and confirmPassword
     // frontend extracts the userId from tokens and sends it via path-variable
-    @PostMapping("/auth/password")
-    public ResponseEntity<String> sendMailForPasswordReset(@Valid @RequestBody EmailDTO request) {
+    @PostMapping("/auth/customers/password")
+    public ResponseEntity<String> sendCustomerMailForPasswordReset(@Valid @RequestBody EmailDTO request) {
          userService.sendMailForPasswordReset(request);
         return ResponseEntity.status(200).body("Confirm to reset the password by clicking the link sent via gmail...");
     }
 
     // after above, PATCH req comes -> verifies the two passwords -> updates the password -> done !
-    @PatchMapping("/auth/password/{userId}")
-    public ResponseEntity<String> resetPassword(@Valid @RequestBody ResetPasswordDTO request, @PathVariable Integer userId){
+    @PatchMapping("/auth/customers/password/{userId}")
+    public ResponseEntity<String> resetCustomerPassword(@Valid @RequestBody ResetPasswordDTO request, @PathVariable Integer userId){
         String res = userService.resetPassword(request, userId);
         return ResponseEntity.status(200).body(res);
     }
@@ -135,6 +135,22 @@ public class UserController {
     @PatchMapping("/restaurants/password")
     public ResponseEntity<String> updateRestaurantPassword(@Valid @RequestBody PasswordChangeDTO request) {
         String res = userService.updatePassword(request);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // forget password (outside the login)
+    // user sends email -> server sends confirmation email -> user clicks it -> re-routes to frontend page with newPassword and confirmPassword
+    // frontend extracts the userId from tokens and sends it via path-variable
+    @PostMapping("/auth/restaurants/password")
+    public ResponseEntity<String> sendRestaurantMailForPasswordReset(@Valid @RequestBody EmailDTO request) {
+        userService.sendMailForPasswordReset(request);
+        return ResponseEntity.status(200).body("Confirm to reset the password by clicking the link sent via gmail...");
+    }
+
+    // after above, PATCH req comes -> verifies the two passwords -> updates the password -> done !
+    @PatchMapping("/auth/restaurants/password/{userId}")
+    public ResponseEntity<String> resetRestaurantPassword(@Valid @RequestBody ResetPasswordDTO request, @PathVariable Integer userId){
+        String res = userService.resetPassword(request, userId);
         return ResponseEntity.status(200).body(res);
     }
 }

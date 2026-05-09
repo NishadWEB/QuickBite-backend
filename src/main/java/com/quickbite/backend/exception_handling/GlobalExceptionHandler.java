@@ -61,7 +61,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.GONE)
     public ErrResponse handle(HttpMessageNotReadableException e){
-        return new ErrResponse("Bro, atleast fill the details before pressing the 'enter' button!", LocalDateTime.now());
+        return new ErrResponse("Bro, Data send from you is not in the format that I expect", LocalDateTime.now());
     }
 
 

@@ -67,7 +67,7 @@ public class UserService {
             return "successfully registered you as our customer.";
         } catch (DataIntegrityViolationException e) {
             log.error("error is : " + e);
-            throw new AlreadyExistsException("User with the email id '" +request.getEmail()+"' already exists!");
+            throw new AlreadyExistsException("User with the email id '" + request.getEmail() + "' already exists!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -107,7 +107,13 @@ public class UserService {
 
         String token = jwtService.generateToken(userDetails, expiryDate);
 
-        String link = "http://localhost:8080/api/v1/customers/email?token=" + token + "&newEmail=" + newEmail;
+        String link = null;
+
+        if (userDetails.getRole().equals("ROLE_USER")) {
+            link = "http://localhost:8080/api/v1/customers/email?token=" + token + "&newEmail=" + newEmail;
+        } else {
+            link = "http://localhost:8080/api/v1/restaurants/email?token=" + token + "&newEmail=" + newEmail;
+        }
 
         AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User does'nt exists!"));
 
@@ -177,14 +183,19 @@ public class UserService {
     // outside the login (under the login form)
     public void sendMailForPasswordReset(EmailDTO request) {
         String email = request.getEmail();
-        AppUser user = userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found."));
+        AppUser user = userRepo.findByEmail(email).orElseThrow(() -> new ResourceNotFoundException("User not found.May be worng email..."));
 
         UserPrincipal userDetails = new UserPrincipal(user);
         Date expiryDate = new Date(System.currentTimeMillis() + 1000 * 60 * 5); // 5 mins
         String token = jwtService.generateToken(userDetails, expiryDate);
 
         // link to the frontend
-        String link = "http://localhost:5173/api/v1/customers/password?token=" + token;
+        String link = null;
+        if(userDetails.getRole().equals("ROLE_USER")){
+            link = "http://localhost:5173/api/v1/customers/password?token=" + token;
+        }else {
+            link = "http://localhost:5173/api/v1/restaurants/password?token=" + token;
+        }
 
         String subject = "Password Reset verification";
         String message = "Confirm to reset the password by clicking below link\n" + link;
@@ -196,7 +207,7 @@ public class UserService {
         String confirmPassword = request.getConfirmPassword();
 
         if (newPassword.equals(confirmPassword)) {
-            AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+            AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found.May be user_id is tampered!"));
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepo.save(user);
             return "Password changed successfully";
@@ -257,7 +268,7 @@ public class UserService {
             return "successfully registered you as a Restaurant owner.";
         } catch (DataIntegrityViolationException e) {
             log.error("error is : " + e);
-            throw new AlreadyExistsException("Restaurant with the email id '" +request.getEmail()+"' already exists!");
+            throw new AlreadyExistsException("Restaurant with the email id '" + request.getEmail() + "' already exists!");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
