@@ -6,9 +6,8 @@ import lombok.Data;
 @Data
 public class PasswordChangeDTO {
     @NotBlank(message = "Invalid password")
-    private String newPassword;
-
-    @NotBlank(message = "Invalid password")
     private String oldPassword;
 
+    @NotBlank(message = "Invalid password")
+    private String newPassword;
 }

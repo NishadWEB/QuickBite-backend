@@ -38,7 +38,7 @@ public class UserController {
 
     // update customer-email
     @PatchMapping("/customers/email")
-    public ResponseEntity<String> updateEmail(@Valid @RequestBody NewEmailDTO request) {
+    public ResponseEntity<String> updateCustomerEmail(@Valid @RequestBody NewEmailDTO request) {
         userService.updateEmail(request);
         return ResponseEntity.status(200).body("Confirm to update the email by clicking the link sent via gmail...");
     }
@@ -52,7 +52,7 @@ public class UserController {
 
     // update password (login required)
     @PatchMapping("/customers/password")
-    public ResponseEntity<String> updatePassword(@Valid @RequestBody PasswordChangeDTO request) {
+    public ResponseEntity<String> updateCustomerPassword(@Valid @RequestBody PasswordChangeDTO request) {
         String res = userService.updatePassword(request);
         return ResponseEntity.status(200).body(res);
     }
@@ -131,4 +131,10 @@ public class UserController {
         return ResponseEntity.status(200).body(res);
     }
 
+    // update password (login required)
+    @PatchMapping("/restaurants/password")
+    public ResponseEntity<String> updateRestaurantPassword(@Valid @RequestBody PasswordChangeDTO request) {
+        String res = userService.updatePassword(request);
+        return ResponseEntity.status(200).body(res);
+    }
 }
