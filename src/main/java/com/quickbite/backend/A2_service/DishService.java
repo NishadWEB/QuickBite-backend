@@ -101,4 +101,26 @@ public class DishService {
                 })
                 .toList();
     }
+
+    public List<GetAllDishesDTO> getAllDishesByRestaurantId(Integer restaurantId) {
+        List<Dish> dishes = dishRepo.findByRestaurantRestaurantId(restaurantId);
+        if (dishes.isEmpty()) {
+            throw new ResourceNotFoundException("Dishes not added yet.");
+        }
+
+
+        return dishes.stream()
+                .map( dish -> {
+                    GetAllDishesDTO finalDishesList = new GetAllDishesDTO();
+
+                    finalDishesList.setDishId(dish.getDishId());
+                    finalDishesList.setRestaurantId(dish.getRestaurant().getRestaurantId());
+                    finalDishesList.setName(dish.getName());
+                    finalDishesList.setPrice(dish.getPrice());
+                    finalDishesList.setDescription(dish.getDescription());
+                    finalDishesList.setImage(dish.getImage());
+                    return finalDishesList;
+                })
+                .toList();
+    }
 }

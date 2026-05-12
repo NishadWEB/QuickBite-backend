@@ -31,4 +31,11 @@ public class DishController {
         List<GetAllDishesDTO> res = dishService.getAllDishes();
         return ResponseEntity.status(200).body(res);
     }
+
+    // get all dishes that belongs to one restaurant by id (for customer page)
+    @GetMapping("/{restaurantId}/dishes")
+    public ResponseEntity<List<GetAllDishesDTO>> getAllDishesByRestaurantId(@PathVariable Integer restaurantId){
+        List<GetAllDishesDTO> res = dishService.getAllDishesByRestaurantId(restaurantId);
+        return ResponseEntity.status(200).body(res);
+    }
 }
