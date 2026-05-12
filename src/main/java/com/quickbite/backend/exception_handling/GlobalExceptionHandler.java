@@ -53,13 +53,13 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ExpiredJwtException.class)
-    @ResponseStatus(HttpStatus.GONE)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     public ErrResponse handle(ExpiredJwtException e){
         return new ErrResponse(e.getMessage(), LocalDateTime.now());
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    @ResponseStatus(HttpStatus.GONE)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrResponse handle(HttpMessageNotReadableException e){
         return new ErrResponse("Bro, Data send from you is not in the format that I expect", LocalDateTime.now());
     }
