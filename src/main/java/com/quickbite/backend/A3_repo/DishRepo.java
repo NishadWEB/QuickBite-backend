@@ -4,6 +4,9 @@ import com.quickbite.backend.model.Dish;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+
 @Repository
 public interface DishRepo extends JpaRepository<Dish, Integer> {
+    ArrayList<Dish> findByRestaurantRestaurantId(Integer restaurantId);
 }
