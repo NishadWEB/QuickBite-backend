@@ -5,6 +5,7 @@ import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.ErrResponse;
 import io.jsonwebtoken.ExpiredJwtException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -62,6 +63,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrResponse handle(HttpMessageNotReadableException e){
         return new ErrResponse("Bro, Data send from you is not in the format that I expect", LocalDateTime.now());
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrResponse handle(DataIntegrityViolationException e){
+        return new ErrResponse(e.getMessage(), LocalDateTime.now());
     }
 
 

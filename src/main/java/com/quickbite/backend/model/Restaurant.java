@@ -19,6 +19,9 @@ public class Restaurant {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer restaurantId;
 
+    @OneToOne
+    private AppUser user;
+
     private String name;
 
     private String description;

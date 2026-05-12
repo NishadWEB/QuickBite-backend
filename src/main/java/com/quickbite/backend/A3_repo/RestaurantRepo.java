@@ -8,4 +8,7 @@ import java.util.Optional;
 
 @Repository
 public interface RestaurantRepo extends JpaRepository<Restaurant, Integer> {
+    Restaurant findByUserUserId(Integer userId);
+
+    boolean existsByUserUserId(Integer userId);
 }
