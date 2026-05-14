@@ -4,6 +4,7 @@ import com.quickbite.backend.A3_repo.CartRepo;
 import com.quickbite.backend.A3_repo.DishRepo;
 import com.quickbite.backend.A3_repo.RestaurantRepo;
 import com.quickbite.backend.A3_repo.UserRepo;
+import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.AddToCartDTO;
 import com.quickbite.backend.model.AppUser;
@@ -11,6 +12,7 @@ import com.quickbite.backend.model.Cart;
 import com.quickbite.backend.model.Dish;
 import com.quickbite.backend.model.Restaurant;
 import com.quickbite.backend.principal.UserPrincipal;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,8 +20,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
+@Slf4j
 @Service
 public class CartService {
 
@@ -35,8 +39,8 @@ public class CartService {
     @Autowired
     private DishRepo dishRepo;
 
-    public void addItemToCart(AppUser user, Restaurant restaurant, Dish dish, String dishName, double dishPrice,int qty , Cart cartItem, Integer cartId){
-        if(cartId != null){
+    public void addItemToCart(AppUser user, Restaurant restaurant, Dish dish, String dishName,byte[] dishImage, double dishPrice, int qty, Cart cartItem, Integer cartId) {
+        if (cartId != null) {
             cartItem.setCartId(cartId);
         }
         cartItem.setUser(user);
@@ -57,6 +61,7 @@ public class CartService {
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        // below three are for FK in cart_items table
         AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Restaurant restaurant = restaurantRepo.findById(addToCartItem.getRestaurantId()).orElseThrow(() -> new ResourceNotFoundException("Restaurant Not Found!"));
         Dish dish = dishRepo.findById(addToCartItem.getDishId()).orElseThrow(() -> new ResourceNotFoundException("Dish Not Found!"));
@@ -67,6 +72,15 @@ public class CartService {
         String dishName = addToCartItem.getDishName();
         double dishPrice = addToCartItem.getDishPrice();
 
+        // fetching dishImage
+        byte[] dishImage;
+        try{
+            dishImage = dish.getImage();
+        } catch (Exception e) {
+            log.error("error in CartService while fetching dishImage in addToCart() : "+ e);
+            throw new RuntimeException(e);
+        }
+
         Cart cartItem = new Cart();
 
         List<Cart> cartItemsOfCurrentCustomer = cartRepo.findByUserUserId(userId);
@@ -75,7 +89,7 @@ public class CartService {
             System.out.println("CartService : cart table is empty !");
             qty = addToCartItem.getQty();
 
-            addItemToCart(user, restaurant, dish, dishName, dishPrice, qty , cartItem, cartId);
+            addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
 
             // dynamically incrementing the cart id
 //            cartItem.setUser(user);
@@ -87,7 +101,7 @@ public class CartService {
 //            cartItem.setTotal(qty * dishPrice);
         } else {
             List<Cart> filteredList = cartItemsOfCurrentCustomer.stream()
-                    .filter(c -> c.getRestaurant().getRestaurantId() == addToCartItem.getRestaurantId())
+                    .filter(c -> Objects.equals(c.getRestaurant().getRestaurantId(), addToCartItem.getRestaurantId()))
                     .toList();
 
 
@@ -95,7 +109,7 @@ public class CartService {
                 System.out.println("CartService : filteredList is empty");
                 qty = addToCartItem.getQty();
 
-                addItemToCart(user, restaurant, dish, dishName, dishPrice, qty , cartItem, cartId);
+                addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
 
 
                 // dynamically incrementing the cart id
@@ -110,14 +124,14 @@ public class CartService {
                 System.out.println("filtered list is : " + filteredList);
 
                 Optional<Cart> finalItemInCart = filteredList.stream()
-                        .filter(c -> c.getDish().getDishId() == addToCartItem.getDishId())
+                        .filter(c -> Objects.equals(c.getDish().getDishId(), addToCartItem.getDishId()))
                         .findFirst();
 
                 if (finalItemInCart.isEmpty()) {
                     System.out.println("CartService : finalItem is empty");
                     qty = addToCartItem.getQty();
 
-                    addItemToCart(user, restaurant, dish, dishName, dishPrice, qty , cartItem, cartId);
+                    addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
 
 
                     // dynamically incrementing the cart id
@@ -133,7 +147,7 @@ public class CartService {
                     qty = addToCartItem.getQty() + finalItemInCart.get().getQty();
                     cartId = finalItemInCart.get().getCartId();
 
-                    addItemToCart(user, restaurant, dish, dishName, dishPrice, qty , cartItem, cartId);
+                    addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
 //                    cartItem.setCartId(cartId);
 //                    cartItem.setUser(user);
 //                    cartItem.setRestaurant(restaurant);
@@ -151,6 +165,18 @@ public class CartService {
             return "Dish added to cart successfully";
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
+        }
+    }
+
+
+    public String deleteFromCartById(Integer cartId) {
+        cartRepo.findById(cartId).orElseThrow(() -> new ResourceNotFoundException("cart item with 'cartId = "+ cartId +"' does'nt exist."));
+        try {
+            cartRepo.deleteById(cartId);
+            return "successfully deleted this cart item";
+        } catch (Exception e) {
+            log.error("error in CartService, deleteFromCartById() : " + e);
+            throw new RuntimeException(e);
         }
     }
 }

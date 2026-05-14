@@ -1,0 +1,77 @@
+[33mcommit 727b54c903ddc88e9aa044700691f4e8e818d943[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Tue May 12 16:58:47 2026 +0530
+
+    Implement get-all-Dishes-by-restaurantId functionality (for customer when clicks the restaurant card
+
+[33mcommit d2779dfec642b4e2a9fbd244bf8bb3d4497bc67e[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Tue May 12 16:48:58 2026 +0530
+
+    Implement get-all-Dishes that belongs to one restaurant(for restaurant profile)
+
+[33mcommit a1c31f5b1890ef7a8653a34a82d0f89bbacda0a8[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Tue May 12 15:45:06 2026 +0530
+
+    Implement add-Dish functionality
+
+[33mcommit 8780ffe37af2d8ee8ba877b82c8a0bcd8732a87b[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Tue May 12 11:24:59 2026 +0530
+
+    Implement create-Restaurant-profile functionality
+
+[33mcommit 7eab28e7cde2d9835a5315dd3a98be06d670041e[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 10:32:47 2026 +0530
+
+    Implement forgot-Restaurant-password functionality
+
+[33mcommit c0252b3ca38945cbf9ab6c636ec01e7f86ab5f98[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 10:02:27 2026 +0530
+
+    Implement update-Restarant-password functionaity while user logged-in
+
+[33mcommit 7affec6f17ed5ad18a70249bf37aaad1b4fec781[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 09:50:52 2026 +0530
+
+    Implement update-restraunt-email functionality using email confirmation
+
+[33mcommit c9e053323713620b79c4a7daefc9fcc24764298a[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 01:29:09 2026 +0530
+
+    Implement delete-Restaurant functionality
+
+[33mcommit 68b66b35fa89c9c3bc7c33539e0575df8bc86569[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 01:18:45 2026 +0530
+
+    Implement login-Restaurant functionality and Handle the error occured when the user sends the data without filling any details (HttpMessageNotReadableException)
+
+[33mcommit 99ab2584bd340c0069605bcf47b79af2d4c52b5e[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Sat May 9 00:48:26 2026 +0530
+
+    Implement register-Restaurant functionality and Fix the BUG : that registers the user in db, even if some error occurs while sending email. (by using @Transactional)
+
+[33mcommit b37126954f57cfcbc46724ee607c4a9c7a98fcdd[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Fri May 8 17:46:26 2026 +0530
+
+    Implement add-to-cart functionality with qty control
+
+[33mcommit 09027bce753a247e74d32fbfb82e10c0d04b8ee1[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Thu May 7 14:54:34 2026 +0530
+
+    Secure SMTP credentials
+
+[33mcommit b940ca696ba9f1a13092346d41e3475294bc111e[m
+Author: Nishad M <04nishad@gmail.com>
+Date:   Thu May 7 14:24:54 2026 +0530
+
+    Initial commit

@@ -3,6 +3,7 @@ package com.quickbite.backend.A2_service;
 import com.quickbite.backend.A3_repo.DishRepo;
 import com.quickbite.backend.A3_repo.RestaurantRepo;
 import com.quickbite.backend.A3_repo.UserRepo;
+import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.restaurant_DTO.DishDTO;
 import com.quickbite.backend.dto.restaurant_DTO.GetAllDishesDTO;
@@ -53,8 +54,17 @@ public class DishService {
         dish1.setDescription(dish.getDescription().toLowerCase().trim());
 
         try {
-            dish1.setImage(dish.getImage().getBytes());
-        } catch (Exception e) {
+            byte[] dishImage = dish.getImage().getBytes();
+
+            if (dishImage.length == 0) {
+                throw new InvalidInputException("dishImage cannot be empty.");
+            }
+
+            dish1.setImage(dishImage);
+        } catch (InvalidInputException e) {
+            throw e;
+        }
+        catch (Exception e) {
             log.error("Error in DishService while setting the dish image : " + e);
             throw new RuntimeException(e);
         }
@@ -88,7 +98,7 @@ public class DishService {
 
 
         return dishes.stream()
-                .map( dish -> {
+                .map(dish -> {
                     GetAllDishesDTO finalDishesList = new GetAllDishesDTO();
 
                     finalDishesList.setDishId(dish.getDishId());
@@ -110,7 +120,7 @@ public class DishService {
 
 
         return dishes.stream()
-                .map( dish -> {
+                .map(dish -> {
                     GetAllDishesDTO finalDishesList = new GetAllDishesDTO();
 
                     finalDishesList.setDishId(dish.getDishId());

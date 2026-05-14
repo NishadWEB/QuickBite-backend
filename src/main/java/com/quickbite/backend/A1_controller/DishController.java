@@ -25,7 +25,7 @@ public class DishController {
         return ResponseEntity.status(201).body(res);
     }
 
-    // get all dishes that belongs to one restaurant
+    // get all dishes that belongs to one restaurant (for restaurant owner)
     @GetMapping("/me/dishes")
     public ResponseEntity<List<GetAllDishesDTO>> getAllDishes(){
         List<GetAllDishesDTO> res = dishService.getAllDishes();

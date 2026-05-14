@@ -84,14 +84,6 @@ public class UserController {
 
     }
 
-
-    // add to cart
-    @PostMapping("/customers/cart/items")
-    public ResponseEntity<String> addToCart(@RequestBody AddToCartDTO addToCartItem){
-        String res = cartService.addToCart(addToCartItem);
-        return ResponseEntity.status(200).body(res);
-    }
-
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RESTAURANT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
