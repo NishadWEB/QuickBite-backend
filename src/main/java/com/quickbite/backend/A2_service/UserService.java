@@ -27,6 +27,7 @@ import java.util.Date;
 
 @Slf4j
 @Service
+@Transactional
 public class UserService {
 
     @Autowired

@@ -7,16 +7,19 @@ import com.quickbite.backend.A3_repo.UserRepo;
 import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.AddToCartDTO;
+import com.quickbite.backend.dto.Qty;
 import com.quickbite.backend.model.AppUser;
 import com.quickbite.backend.model.Cart;
 import com.quickbite.backend.model.Dish;
 import com.quickbite.backend.model.Restaurant;
 import com.quickbite.backend.principal.UserPrincipal;
+import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@Transactional
 public class CartService {
 
     @Autowired
@@ -39,7 +43,7 @@ public class CartService {
     @Autowired
     private DishRepo dishRepo;
 
-    public void addItemToCart(AppUser user, Restaurant restaurant, Dish dish, String dishName,byte[] dishImage, double dishPrice, int qty, Cart cartItem, Integer cartId) {
+    public void addItemToCart(AppUser user, Restaurant restaurant, Dish dish, String dishName, byte[] dishImage, double dishPrice, int qty, Cart cartItem, Integer cartId) {
         if (cartId != null) {
             cartItem.setCartId(cartId);
         }
@@ -53,7 +57,6 @@ public class CartService {
     }
 
     public String addToCart(AddToCartDTO addToCartItem) {
-
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
@@ -74,10 +77,10 @@ public class CartService {
 
         // fetching dishImage
         byte[] dishImage;
-        try{
+        try {
             dishImage = dish.getImage();
         } catch (Exception e) {
-            log.error("error in CartService while fetching dishImage in addToCart() : "+ e);
+            log.error("error in CartService while fetching dishImage in addToCart() : " + e);
             throw new RuntimeException(e);
         }
 
@@ -89,40 +92,18 @@ public class CartService {
             System.out.println("CartService : cart table is empty !");
             qty = addToCartItem.getQty();
 
-            addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
-
-            // dynamically incrementing the cart id
-//            cartItem.setUser(user);
-//            cartItem.setRestaurant(restaurant);
-//            cartItem.setDish(dish);
-//            cartItem.setDishName(dishName);
-//            cartItem.setDishPrice(dishPrice);
-//            cartItem.setQty(qty);
-//            cartItem.setTotal(qty * dishPrice);
+            addItemToCart(user, restaurant, dish, dishName, dishImage, dishPrice, qty, cartItem, cartId);
         } else {
             List<Cart> filteredList = cartItemsOfCurrentCustomer.stream()
                     .filter(c -> Objects.equals(c.getRestaurant().getRestaurantId(), addToCartItem.getRestaurantId()))
                     .toList();
 
-
             if (filteredList.isEmpty()) {
                 System.out.println("CartService : filteredList is empty");
                 qty = addToCartItem.getQty();
 
-                addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
-
-
-                // dynamically incrementing the cart id
-//                cartItem.setUser(user);
-//                cartItem.setRestaurant(restaurant);
-//                cartItem.setDish(dish);
-//                cartItem.setDishName(dishName);
-//                cartItem.setDishPrice(dishPrice);
-//                cartItem.setQty(qty);
-//                cartItem.setTotal(qty * dishPrice);
+                addItemToCart(user, restaurant, dish, dishName, dishImage, dishPrice, qty, cartItem, cartId);
             } else {
-                System.out.println("filtered list is : " + filteredList);
-
                 Optional<Cart> finalItemInCart = filteredList.stream()
                         .filter(c -> Objects.equals(c.getDish().getDishId(), addToCartItem.getDishId()))
                         .findFirst();
@@ -131,31 +112,12 @@ public class CartService {
                     System.out.println("CartService : finalItem is empty");
                     qty = addToCartItem.getQty();
 
-                    addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
-
-
-                    // dynamically incrementing the cart id
-//                    cartItem.setUser(user);
-//                    cartItem.setRestaurant(restaurant);
-//                    cartItem.setDish(dish);
-//                    cartItem.setDishName(dishName);
-//                    cartItem.setDishPrice(dishPrice);
-//                    cartItem.setQty(qty);
-//                    cartItem.setTotal(qty * dishPrice);
+                    addItemToCart(user, restaurant, dish, dishName, dishImage, dishPrice, qty, cartItem, cartId);
                 } else {
-                    System.out.println("finalItem is : " + finalItemInCart);
                     qty = addToCartItem.getQty() + finalItemInCart.get().getQty();
                     cartId = finalItemInCart.get().getCartId();
 
-                    addItemToCart(user, restaurant, dish, dishName,dishImage, dishPrice, qty, cartItem, cartId);
-//                    cartItem.setCartId(cartId);
-//                    cartItem.setUser(user);
-//                    cartItem.setRestaurant(restaurant);
-//                    cartItem.setDish(dish);
-//                    cartItem.setDishName(dishName);
-//                    cartItem.setDishPrice(dishPrice);
-//                    cartItem.setQty(qty);
-//                    cartItem.setTotal(dishPrice * qty);
+                    addItemToCart(user, restaurant, dish, dishName, dishImage, dishPrice, qty, cartItem, cartId);
                 }
             }
         }
@@ -170,12 +132,30 @@ public class CartService {
 
 
     public String deleteFromCartById(Integer cartId) {
-        cartRepo.findById(cartId).orElseThrow(() -> new ResourceNotFoundException("cart item with 'cartId = "+ cartId +"' does'nt exist."));
+        cartRepo.findById(cartId).orElseThrow(() -> new ResourceNotFoundException("cart item with 'cartId = " + cartId + "' does'nt exist."));
         try {
             cartRepo.deleteById(cartId);
             return "successfully deleted this cart item";
         } catch (Exception e) {
             log.error("error in CartService, deleteFromCartById() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String updateQty(Integer cartId, Qty qty) {
+        Cart cartItem = cartRepo.findById(cartId).orElseThrow(() -> new ResourceNotFoundException("cart item with 'cartId = " + cartId + "' does'nt exist."));
+
+        Integer quantity = qty.getQty();
+        Double price = cartItem.getDishPrice();
+        Double total = price * quantity;
+
+        cartItem.setQty(quantity);
+        cartItem.setTotal(total);
+        try {
+            cartRepo.save(cartItem);
+            return "qty updated successfully";
+        } catch (Exception e) {
+            log.error("error in CartService , error updating the qty in updateQQty() : " + e);
             throw new RuntimeException(e);
         }
     }
