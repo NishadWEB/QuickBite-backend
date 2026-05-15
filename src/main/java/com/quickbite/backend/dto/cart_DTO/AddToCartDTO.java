@@ -1,4 +1,4 @@
-package com.quickbite.backend.dto;
+package com.quickbite.backend.dto.cart_DTO;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
@@ -11,12 +11,10 @@ public class AddToCartDTO {
     private Integer dishId;
 
     private String dishName;
-
     private Double dishPrice;
 
     @NotNull(message = "qty must be atleast 1")
     @Positive(message = "qty must be atleat 1")
     private Integer qty;
-    private MultipartFile dishImage;
     private Double total;
 }

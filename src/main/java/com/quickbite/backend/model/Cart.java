@@ -25,6 +25,9 @@ public class Cart {
     @ManyToOne
     private Dish dish;
 
+    @Lob
+    private byte[] dishImage;
+
     private String dishName;
 
     private Double dishPrice;

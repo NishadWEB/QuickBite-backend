@@ -4,16 +4,15 @@ import com.quickbite.backend.A3_repo.CartRepo;
 import com.quickbite.backend.A3_repo.DishRepo;
 import com.quickbite.backend.A3_repo.RestaurantRepo;
 import com.quickbite.backend.A3_repo.UserRepo;
-import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
-import com.quickbite.backend.dto.AddToCartDTO;
+import com.quickbite.backend.dto.cart_DTO.AddToCartDTO;
 import com.quickbite.backend.dto.Qty;
+import com.quickbite.backend.dto.cart_DTO.CartItemResponse;
 import com.quickbite.backend.model.AppUser;
 import com.quickbite.backend.model.Cart;
 import com.quickbite.backend.model.Dish;
 import com.quickbite.backend.model.Restaurant;
 import com.quickbite.backend.principal.UserPrincipal;
-import jakarta.persistence.criteria.CriteriaBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -21,7 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -50,6 +48,7 @@ public class CartService {
         cartItem.setUser(user);
         cartItem.setRestaurant(restaurant);
         cartItem.setDish(dish);
+        cartItem.setDishImage(dishImage);
         cartItem.setDishName(dishName);
         cartItem.setDishPrice(dishPrice);
         cartItem.setQty(qty);
@@ -158,5 +157,36 @@ public class CartService {
             log.error("error in CartService , error updating the qty in updateQQty() : " + e);
             throw new RuntimeException(e);
         }
+    }
+
+    public List<CartItemResponse> getAllCartItemsOfCurrentUser() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        List<Cart> items = cartRepo.findByUserUserId(userId);
+
+        if(items.isEmpty()){
+            throw new ResourceNotFoundException("Your cart is empty");
+        }
+
+        List<CartItemResponse> cartItems = items.stream()
+                .map((item) -> {
+                    CartItemResponse cartItemResponse = new CartItemResponse();
+                    cartItemResponse.setCartId(item.getCartId());
+                    cartItemResponse.setUserId(userId);
+                    cartItemResponse.setRestaurantId(item.getRestaurant().getRestaurantId());
+                    cartItemResponse.setDishId(item.getDish().getDishId());
+                    cartItemResponse.setDishName(item.getDishName());
+                    cartItemResponse.setDishImage(item.getDishImage());
+                    cartItemResponse.setDishPrice(item.getDishPrice());
+                    cartItemResponse.setQty(item.getQty());
+                    cartItemResponse.setTotal(item.getTotal());
+
+                    return cartItemResponse;
+                })
+                .toList();
+
+        return cartItems;
     }
 }
