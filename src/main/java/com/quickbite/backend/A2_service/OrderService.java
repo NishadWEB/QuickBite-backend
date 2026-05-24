@@ -1,8 +1,7 @@
 package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
-import com.quickbite.backend.dto.order_DTO.DishResponse;
-import com.quickbite.backend.dto.order_DTO.PendingOrdersResponse;
+import com.quickbite.backend.dto.order_DTO.*;
 import com.quickbite.backend.enums.OrderStatus;
 
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
@@ -150,5 +149,56 @@ public class OrderService {
         }
 
         return listOfNewOrders;
+    }
+
+    public CurrentOrderResponse getCurrentOrder() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        List<Order> orders = orderRepo.findByUserId(userId);
+
+        if (orders.isEmpty()) {
+            throw new ResourceNotFoundException("You don't have any live orders.");
+        }
+
+        List<LiveOrderResponse> listOfOrders = new ArrayList<>();
+        for (Order order : orders) {
+
+            Integer orderId = order.getOrderId();
+            List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+
+            List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+                Item item = new Item();
+                item.setDishId(i.getDish().getDishId());
+                item.setDishName(i.getDish().getName());
+                item.setQty(i.getQty());
+                item.setPrice(i.getPrice());
+                item.setTotal(i.getTotal());
+
+                return item;
+            }).toList();
+
+            LiveOrderResponse response = new LiveOrderResponse();
+            response.setOrderId(orderId);
+            response.setStatus(order.getStatus());
+            response.setRestaurantId(order.getRestaurant().getRestaurantId());
+            response.setRestaurantName(order.getRestaurant().getName());
+            response.setItems(orderItems);
+            response.setTotal(order.getTotal());
+
+            listOfOrders.add(response);
+        }
+
+        Double netTotal = 0.0;
+        for (LiveOrderResponse order : listOfOrders){
+            netTotal += order.getTotal();
+        }
+
+        CurrentOrderResponse res = new CurrentOrderResponse();
+        res.setOrders(listOfOrders);
+        res.setNetTotal(netTotal);
+
+        return res;
     }
 }
