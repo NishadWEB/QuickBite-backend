@@ -71,6 +71,12 @@ public class GlobalExceptionHandler {
         return new ErrResponse(e.getMessage(), LocalDateTime.now());
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrResponse handle(IllegalStateException e){
+        return new ErrResponse(e.getMessage(), LocalDateTime.now());
+    }
+
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.BAD_GATEWAY)

@@ -22,6 +22,6 @@ public class DishDTO {
     @NotNull(message = "description cannot be empty")
     private String description;
 
-    @NotNull(message = "logo cannot be empty")
+    @NotNull(message = "dish image cannot be empty")
     private MultipartFile image;
 }

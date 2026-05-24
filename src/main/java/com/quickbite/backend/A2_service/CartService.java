@@ -87,6 +87,22 @@ public class CartService {
 
         List<Cart> cartItemsOfCurrentCustomer = cartRepo.findByUserUserId(userId);
 
+        // logic to check if the item is of same restaurant or not
+        if (!cartItemsOfCurrentCustomer.isEmpty()) {
+
+            Integer existingRestaurantId =
+                    cartItemsOfCurrentCustomer.get(0)
+                            .getRestaurant()
+                            .getRestaurantId();
+
+            Integer incomingRestaurantId =
+                    addToCartItem.getRestaurantId();
+
+            if (!incomingRestaurantId.equals(existingRestaurantId)) {
+                throw new IllegalStateException("You can only add items of one restaurant at a time!");
+            }
+        }
+
         if (cartItemsOfCurrentCustomer.isEmpty()) {
             System.out.println("CartService : cart table is empty !");
             qty = addToCartItem.getQty();
@@ -166,7 +182,7 @@ public class CartService {
 
         List<Cart> items = cartRepo.findByUserUserId(userId);
 
-        if(items.isEmpty()){
+        if (items.isEmpty()) {
             throw new ResourceNotFoundException("Your cart is empty");
         }
 
