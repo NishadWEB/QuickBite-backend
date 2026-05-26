@@ -7,7 +7,7 @@ public class Item {
     private Integer dishId;
     private String dishName;
 
-    private Integer qty;
     private Double price;
+    private Integer qty;
     private Double total;
 }

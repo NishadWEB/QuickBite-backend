@@ -18,7 +18,7 @@ public class Order {
     private Integer userId; // customer
     private Double total;
 
-//    @Enumerated(EnumType.STRING)
+    @Enumerated(EnumType.STRING)
     private OrderStatus status;
     private String address;
 }

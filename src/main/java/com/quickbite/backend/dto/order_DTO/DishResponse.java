@@ -7,7 +7,7 @@ public class DishResponse {
     private String dishName;
     private Integer qty;
     // customers
-    private Integer userId;
-    private String userName;
+//    private Integer userId;
+//    private String userName;
     private String address;
 }

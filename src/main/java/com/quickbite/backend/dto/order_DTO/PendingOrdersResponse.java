@@ -13,6 +13,8 @@ import java.util.List;
 @Data
 public class PendingOrdersResponse {
     private Integer orderId; // orderId
+    private Integer userId;
+    private String userName;
     private OrderStatus status;
     List<DishResponse> items;
 }

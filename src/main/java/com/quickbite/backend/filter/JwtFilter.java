@@ -46,7 +46,6 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 userId = jwtService.extractAllClaims(token).getSubject();
-                System.out.println("User id is : "+ userId);
             } catch (SignatureException e) {
 
                 String jsonString = "{\"message\" : \"Cannot trust the user.Please try to login again\", \"time\" : \"" + LocalDateTime.now() + "\"}";
@@ -69,9 +68,10 @@ public class JwtFilter extends OncePerRequestFilter {
                 System.out.println("exception in filter");
                 throw new RuntimeException(e);
             }
+
             try {
                 if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("User not found.Please register"));
+                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("{\"message\" : \"User not found.Please register\", \"time\" : \""+ LocalDateTime.now() +"\"}"));
 
                     UserPrincipal userDetails = new UserPrincipal(user);
                     Authentication authObj = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());

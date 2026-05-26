@@ -10,11 +10,12 @@ public class AddToCartDTO {
     private Integer restaurantId;
     private Integer dishId;
 
-    private String dishName;
-    private Double dishPrice;
+//    private String dishName;
+//    private Double dishPrice;
 
     @NotNull(message = "qty must be atleast 1")
     @Positive(message = "qty must be atleat 1")
     private Integer qty;
+
     private Double total;
 }

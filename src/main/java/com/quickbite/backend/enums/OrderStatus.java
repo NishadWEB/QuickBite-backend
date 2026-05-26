@@ -1,7 +1,17 @@
 package com.quickbite.backend.enums;
 
 public enum OrderStatus {
-    PENDING,
+    // for Customer
     PLACED,
-    REJECTED
+    CANCELLED,
+
+    // for Restaurant
+    ACCEPTED,
+    REJECTED,
+    READY,
+
+    // for delivery-boy
+    OUT_FOR_DELIVERY,
+    ARRIVED,
+    DELIVERED
 }

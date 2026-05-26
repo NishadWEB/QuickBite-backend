@@ -34,9 +34,6 @@ public class OrderService {
     @Autowired
     private CartRepo cartRepo;
 
-    @Autowired
-    private UserRepo userRepo;
-
     public String placeOrder() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
@@ -62,7 +59,7 @@ public class OrderService {
         order.setRestaurant(restaurant);
         order.setUserId(userId);
         order.setTotal(netTotal);
-        order.setStatus(OrderStatus.PENDING);
+        order.setStatus(OrderStatus.PLACED);
 
         // save the order summary
         try {
@@ -106,6 +103,135 @@ public class OrderService {
         return "your request is processed, check the order status";
     }
 
+    public String acceptOrder(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.PLACED) {
+            throw new IllegalStateException("Only placed orders can be accepted");
+        }
+
+        order.setStatus(OrderStatus.ACCEPTED);
+        try {
+            orderRepo.save(order);
+            return "Order is accepted";
+        } catch (Exception e) {
+            log.error("error in OrderService, acceptOrder() while orderRepo.save(order) : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String rejectOrder(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.PLACED) {
+            throw new IllegalStateException("Only placed orders can be rejected");
+        }
+
+        order.setStatus(OrderStatus.REJECTED);
+        try {
+            orderRepo.save(order);
+            return "Order is Rejected by restaurant for some reason.Sorry for the inconvenience";
+        } catch (Exception e) {
+            log.error("error in OrderService, rejectOrder() while orderRepo.save(order) : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String cancelOrder(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("There is no order with order-id = " + orderId));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("This order is already cancelled.");
+        } else if (order.getStatus() == OrderStatus.REJECTED) {
+            throw new IllegalStateException("This order was already rejected by the restaurant.");
+        } else if (order.getStatus() == OrderStatus.DELIVERED) {
+            throw new IllegalStateException("Delivered orders cannot be cancelled.");
+        } else if (order.getStatus() == OrderStatus.ACCEPTED || order.getStatus() == OrderStatus.READY || order.getStatus() == OrderStatus.OUT_FOR_DELIVERY || order.getStatus() == OrderStatus.ARRIVED) {
+            throw new IllegalStateException("This order is already accepted and being prepared by the restaurant. Cancelling this order now may result in food wastage, and a cancellation fee may be charged.");
+        }
+
+
+        // Customer can cancel when staus is Placed
+        order.setStatus(OrderStatus.CANCELLED);
+        try {
+            orderRepo.save(order);
+            return "Order cancelled successfully.";
+        } catch (Exception e) {
+            log.error("Error in OrderService, cancelOrder() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String markOrderAsReady(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.ACCEPTED) {
+            throw new IllegalStateException("Only ACCEPTED orders can be marked as READY");
+        }
+
+        order.setStatus(OrderStatus.READY);
+        try {
+            System.out.println("before save");
+            orderRepo.save(order);
+            System.out.println("after save");
+            return "Order is Ready.Waiting to pickup by the delivery-partner";
+        } catch (Exception e) {
+            System.out.println("error broo");
+            log.error("error in OrderService, orderReady() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String markOrderAsOutForDelivery(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.READY) {
+            throw new IllegalStateException("If the order is READY, only then you can pickup the order");
+        }
+
+        order.setStatus(OrderStatus.OUT_FOR_DELIVERY);
+        try {
+            orderRepo.save(order);
+            return "Order is out for delivery.";
+        } catch (Exception e) {
+            log.error("error in OrderService, orderPicked() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String markOrderAsArrived(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.OUT_FOR_DELIVERY) {
+            throw new IllegalStateException("You cannot mark it as arrived if the order is not out for delivery");
+        }
+
+        order.setStatus(OrderStatus.ARRIVED);
+        try {
+            orderRepo.save(order);
+            return "Order is arrived.";
+        } catch (Exception e) {
+            log.error("error in OrderService, orderArrived() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    public String markOrderAsDelivered(Integer orderId) {
+        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+
+        if (order.getStatus() != OrderStatus.ARRIVED) {
+            throw new IllegalStateException("You cannot mark it as delivered if the order is not arrived");
+        }
+
+        order.setStatus(OrderStatus.DELIVERED);
+        try {
+            orderRepo.save(order);
+            return "Order is delivered successfully.";
+        } catch (Exception e) {
+            log.error("error in OrderService, orderDelivered() : " + e);
+            throw new RuntimeException(e);
+        }
+    }
 
     public List<PendingOrdersResponse> getPendingOrders() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
@@ -114,10 +240,10 @@ public class OrderService {
         Integer restaurantId = restaurantRepo.findByUserUserId(userId).getRestaurantId();
 
         // this is error bcause , status is stored in the orders table ,. not every item has status,.. but every order has a status and inside the order there are multiple items
-        List<Order> pendingOrders = orderRepo.findByRestaurantRestaurantIdAndStatus(restaurantId, OrderStatus.PENDING);
+        List<Order> pendingOrders = orderRepo.findByRestaurantRestaurantIdAndStatus(restaurantId, OrderStatus.PLACED);
 
         if (pendingOrders.isEmpty()) {
-            throw new ResourceNotFoundException("You have no live orders...");
+            throw new ResourceNotFoundException("You don't have any new orders...");
         }
 
         ArrayList<PendingOrdersResponse> listOfNewOrders = new ArrayList<>();
@@ -132,8 +258,8 @@ public class OrderService {
                         DishResponse dish = new DishResponse();
                         dish.setDishName(i.getDishName());
                         dish.setQty(i.getQty());
-                        dish.setUserId(i.getUser().getUserId());
-                        dish.setUserName(i.getUser().getName());
+//                        dish.setUserId(i.getUser().getUserId());
+//                        dish.setUserName(i.getUser().getName());
                         dish.setAddress(order.getAddress());
 
                         return dish;
@@ -142,16 +268,17 @@ public class OrderService {
 
             PendingOrdersResponse newOrder = new PendingOrdersResponse();
             newOrder.setOrderId(orderId);
+            newOrder.setUserId(rawItems.get(0).getUser().getUserId());
+            newOrder.setUserName(rawItems.get(0).getUserName());
             newOrder.setStatus(order.getStatus());
             newOrder.setItems(items);
 
             listOfNewOrders.add(newOrder);
         }
-
         return listOfNewOrders;
     }
 
-    public CurrentOrderResponse getCurrentOrder() {
+    public CurrentOrderResponse getCurrentOrders() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
         Integer userId = userDetails.getUserId();
@@ -191,14 +318,13 @@ public class OrderService {
         }
 
         Double netTotal = 0.0;
-        for (LiveOrderResponse order : listOfOrders){
+        for (LiveOrderResponse order : listOfOrders) {
             netTotal += order.getTotal();
         }
 
         CurrentOrderResponse res = new CurrentOrderResponse();
         res.setOrders(listOfOrders);
         res.setNetTotal(netTotal);
-
         return res;
     }
 }

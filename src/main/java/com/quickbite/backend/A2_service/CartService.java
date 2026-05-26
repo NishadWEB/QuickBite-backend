@@ -66,13 +66,14 @@ public class CartService {
         // below three are for FK in cart_items table
         AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Restaurant restaurant = restaurantRepo.findById(addToCartItem.getRestaurantId()).orElseThrow(() -> new ResourceNotFoundException("Restaurant Not Found!"));
-        Dish dish = dishRepo.findById(addToCartItem.getDishId()).orElseThrow(() -> new ResourceNotFoundException("Dish Not Found!"));
+        Integer dishId = addToCartItem.getDishId();
+        Dish dish = dishRepo.findById(dishId).orElseThrow(() -> new ResourceNotFoundException("Dish Not Found!"));
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         int qty;
         Integer cartId = null;
-        String dishName = addToCartItem.getDishName();
-        double dishPrice = addToCartItem.getDishPrice();
+        String dishName = dish.getName();
+        double dishPrice = dish.getPrice();
 
         // fetching dishImage
         byte[] dishImage;
@@ -120,7 +121,7 @@ public class CartService {
                 addItemToCart(user, restaurant, dish, dishName, dishImage, dishPrice, qty, cartItem, cartId);
             } else {
                 Optional<Cart> finalItemInCart = filteredList.stream()
-                        .filter(c -> Objects.equals(c.getDish().getDishId(), addToCartItem.getDishId()))
+                        .filter(c -> Objects.equals(c.getDish().getDishId(), dishId))
                         .findFirst();
 
                 if (finalItemInCart.isEmpty()) {
