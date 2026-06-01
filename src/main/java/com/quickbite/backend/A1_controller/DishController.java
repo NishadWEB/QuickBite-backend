@@ -1,6 +1,7 @@
 package com.quickbite.backend.A1_controller;
 
 import com.quickbite.backend.A2_service.DishService;
+import com.quickbite.backend.dto.dish_DTO.DishUpdateRequest;
 import com.quickbite.backend.dto.restaurant_DTO.DishDTO;
 import com.quickbite.backend.dto.restaurant_DTO.GetAllDishesDTO;
 import jakarta.validation.Valid;
@@ -33,9 +34,23 @@ public class DishController {
     }
 
     // get all dishes that belongs to one restaurant by id (for customer page)
-    @GetMapping("/{restaurantId}/dishes")
+    @GetMapping("/dishes/r/{restaurantId}")
     public ResponseEntity<List<GetAllDishesDTO>> getAllDishesByRestaurantId(@PathVariable Integer restaurantId){
         List<GetAllDishesDTO> res = dishService.getAllDishesByRestaurantId(restaurantId);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // delete a dish
+    @DeleteMapping("/dishes/{dishId}")
+    public ResponseEntity<String> deleteDishById(@PathVariable Integer dishId){
+        String res = dishService.deleteDishById(dishId);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // update dish
+    @PatchMapping("/dishes/{dishId}")
+    public ResponseEntity<String> updateDishId(@ModelAttribute DishUpdateRequest dishUpdateRequest, @PathVariable Integer dishId){
+        String res = dishService.updateDishById(dishId, dishUpdateRequest);
         return ResponseEntity.status(200).body(res);
     }
 }

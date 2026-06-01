@@ -54,6 +54,7 @@ public class RestaurantService {
 
         restaurant.setUser(user);
         restaurant.setName(restaurantProfile.getName().toLowerCase().trim());
+        restaurant.setActive(true);
         restaurant.setDescription(restaurantProfile.getDescription().toLowerCase().trim());
         restaurant.setCuisineType(restaurantProfile.getCuisineType().toLowerCase().trim());
         restaurant.setStreetAddress(restaurantProfile.getStreetAddress().toLowerCase().trim());
@@ -95,13 +96,14 @@ public class RestaurantService {
 
 
     public List<RestaurantResponseDTO> getAllRestaurants() {
-        List<Restaurant> listOfRestaurant = restaurantRepo.findAll();
+        List<Restaurant> listOfRestaurants = restaurantRepo.findAll();
+        List<Restaurant> listOfActiveRestaurants = listOfRestaurants.stream().filter(r -> r.getActive() == true).toList();
 
-        if (listOfRestaurant.isEmpty()) {
+        if (listOfActiveRestaurants.isEmpty()) {
             throw new ResourceNotFoundException("Restaurants not added yet...");
         }
 
-        List<RestaurantResponseDTO> finalListOfRestaurants = listOfRestaurant.stream()
+        return listOfActiveRestaurants.stream()
                 .map((restaurant) -> {
                     RestaurantResponseDTO res = new RestaurantResponseDTO();
 
@@ -124,7 +126,5 @@ public class RestaurantService {
 
                     return res;
                 }).toList();
-
-        return finalListOfRestaurants;
     }
 }

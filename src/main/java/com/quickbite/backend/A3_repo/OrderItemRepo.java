@@ -9,4 +9,6 @@ import java.util.List;
 
 public interface OrderItemRepo extends JpaRepository<OrderItem, Integer> {
     ArrayList<OrderItem> findByOrderOrderId(Integer orderId);
+
+    void deleteByRestaurantRestaurantId(Integer restaurantId);
 }

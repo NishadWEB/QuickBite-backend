@@ -1,8 +1,8 @@
 package com.quickbite.backend.A1_controller;
 
-import com.quickbite.backend.A2_service.CartService;
 import com.quickbite.backend.A2_service.UserService;
 import com.quickbite.backend.dto.*;
+import com.quickbite.backend.dto.restaurant_DTO.DeliveryPartnerRegisterRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,14 +10,11 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1")
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class UserController {
 
     @Autowired
     private UserService userService;
-
-    @Autowired
-    private CartService cartService;
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,7 +23,7 @@ public class UserController {
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     @PostMapping("/auth/register")
-    public ResponseEntity<String> registerCustomer(@Valid @RequestBody RegisterRequest request) {
+    public ResponseEntity<String> registerCustomer(@Valid @RequestBody CustomerRegisterRequest request) {
         String res = userService.registerCustomer(request);
         return ResponseEntity.status(201).body(res);
     }
@@ -92,7 +89,7 @@ public class UserController {
 
     // register restaurant
     @PostMapping("/auth/register/restaurant")
-    public ResponseEntity<String> registerRestaurant(@Valid @RequestBody RegisterRequest request){
+    public ResponseEntity<String> registerRestaurant(@Valid @RequestBody RestaurantRegisterRequest request){
         String res = userService.registerRestaurant(request);
         return ResponseEntity.status(201).body(res);
     }
@@ -144,6 +141,26 @@ public class UserController {
     @PatchMapping("/auth/restaurants/password/{userId}")
     public ResponseEntity<String> resetRestaurantPassword(@Valid @RequestBody ResetPasswordDTO request, @PathVariable Integer userId){
         String res = userService.resetPassword(request, userId);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DELIVERY-PARTNER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    // register delivery-partner
+    @PostMapping("/auth/register/delivery-partner")
+    public ResponseEntity<String> registerDeliveryPartner(@Valid @RequestBody DeliveryPartnerRegisterRequest request){
+        String res = userService.registerDeliveryPartner(request);
+        return ResponseEntity.status(201).body(res);
+    }
+
+    // login delivery partner
+    @PostMapping("/auth/login/delivery-partner")
+    public ResponseEntity<String> loginDeliveryPartner(@Valid @RequestBody LoginRequest request) {
+        String res = userService.loginDeliveryPartner(request);
         return ResponseEntity.status(200).body(res);
     }
 }

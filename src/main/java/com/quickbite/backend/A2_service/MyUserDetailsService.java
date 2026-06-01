@@ -1,5 +1,6 @@
 package com.quickbite.backend.A2_service;
 
+import com.quickbite.backend.custom_exception.AccountDeactivatedException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.model.AppUser;
 import com.quickbite.backend.principal.UserPrincipal;
@@ -18,7 +19,14 @@ public class MyUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        AppUser user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found."));
+        AppUser user = userRepo.findByEmail(email);
+        if(user == null){
+            throw new UsernameNotFoundException("User not found.");
+        }
+
+        if(!user.getActive()){
+            throw new AccountDeactivatedException("Your account is currently deactivated. Please register again to activate your account.");
+        }
         return new UserPrincipal(user);
     }
 }

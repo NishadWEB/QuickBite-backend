@@ -11,6 +11,7 @@ public class AppUser {
     private Integer userId;
 
     private String name;
+    private Boolean active;
 
     @Column(unique = true)
     private String email;

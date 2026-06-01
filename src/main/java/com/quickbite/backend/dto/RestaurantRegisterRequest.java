@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class RegisterRequest {
+public class RestaurantRegisterRequest {
     @NotBlank(message = "Name cannot be empty")
     private String name;
 

@@ -1,14 +1,12 @@
 package com.quickbite.backend.dto.order_DTO;
 
 import com.quickbite.backend.enums.OrderStatus;
-import com.quickbite.backend.model.Restaurant;
-import jakarta.persistence.ManyToOne;
 import lombok.Data;
 
 import java.util.List;
 
 @Data
-public class LiveOrderResponse {
+public class PastOrder {
     private Integer orderId;
     private OrderStatus status;
 

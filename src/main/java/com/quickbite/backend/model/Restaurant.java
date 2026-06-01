@@ -23,6 +23,7 @@ public class Restaurant {
     private AppUser user;
 
     private String name;
+    private Boolean active;
 
     private String description;
 

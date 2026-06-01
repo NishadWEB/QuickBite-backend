@@ -1,9 +1,8 @@
 package com.quickbite.backend.A1_controller;
 
 import com.quickbite.backend.A2_service.OrderService;
-import com.quickbite.backend.dto.order_DTO.CurrentOrderResponse;
-import com.quickbite.backend.dto.order_DTO.LiveOrderResponse;
-import com.quickbite.backend.dto.order_DTO.PendingOrdersResponse;
+import com.quickbite.backend.dto.order_DTO.*;
+import com.quickbite.backend.dto.order_DTO.LiveOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +16,10 @@ public class OrderController {
     @Autowired
     private OrderService orderService;
 
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ CUSTOMER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     @PostMapping()
     public ResponseEntity<String> placeOrder() {
         String res = orderService.placeOrder();
@@ -29,6 +32,26 @@ public class OrderController {
         String res = orderService.cancelOrder(orderId);
         return ResponseEntity.status(200).body(res);
     }
+
+    // fetch all orders of a customer, (order history)
+    @GetMapping()
+    public ResponseEntity<List<PastOrder>> getOrderHistoryOfCurrentUser(){
+        List<PastOrder> res = orderService.getOrderHistoryOfCurrentUser();
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // fetch live orders of a customer
+    @GetMapping("/c/live-orders")
+    public ResponseEntity<List<CurrentOrder>> getLiveOrderOfCurrentUser(){
+        List<CurrentOrder> res = orderService.getLiveOrderOfCurrentUser();
+        return ResponseEntity.status(200).body(res);
+    }
+
+
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ RESTAURANT ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     // ACCEPT order by restaurant
     @PatchMapping("/{orderId}/accept")
@@ -50,6 +73,24 @@ public class OrderController {
         String res = orderService.markOrderAsReady(orderId);
         return ResponseEntity.status(200).body(res);
     }
+
+    // to fetch by restaurants in 'New Orders' window (notification)
+    @GetMapping("/new-orders")
+    public ResponseEntity<List<NewOrdersResponse>> getNewOrdersList() {
+        List<NewOrdersResponse> res = orderService.getNewOrdersList();
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // fetch accepted-orders list (live orders window)
+    @GetMapping("/r/live-orders")
+    public ResponseEntity<List<LiveOrder>> getLiveOrdersOfThisRestaurant(){
+        List<LiveOrder> res = orderService.getLiveOrdersOfThisRestaurant();
+        return ResponseEntity.status(200).body(res);
+    }
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DELIVERY-BOY ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     // order picked by delivery-boy
     @PatchMapping("/{orderId}/pickup")
@@ -73,17 +114,12 @@ public class OrderController {
     }
 
     // Live order tracking by 'Customer'
-    @GetMapping("/current-orders")
-    public ResponseEntity<CurrentOrderResponse> getCurrentOrders() {
-        CurrentOrderResponse res = orderService.getCurrentOrders();
-        return ResponseEntity.status(200).body(res);
-    }
+//    @GetMapping("/current-orders")
+//    public ResponseEntity<CurrentOrderResponse> getCurrentOrders() {
+//        CurrentOrderResponse res = orderService.getCurrentOrders();
+//        return ResponseEntity.status(200).body(res);
+//    }
 
-    // to fetch by restaurants in 'New Orders' window
-    @GetMapping("/pending")
-    public ResponseEntity<List<PendingOrdersResponse>> getPendingOrders() {
-        List<PendingOrdersResponse> res = orderService.getPendingOrders();
-        return ResponseEntity.status(200).body(res);
-    }
+
 
 }

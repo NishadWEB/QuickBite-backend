@@ -11,7 +11,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class PendingOrdersResponse {
+public class NewOrdersResponse {
     private Integer orderId; // orderId
     private Integer userId;
     private String userName;

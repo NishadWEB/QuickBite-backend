@@ -15,7 +15,7 @@ public class Order {
     @ManyToOne
     private Restaurant restaurant;
 
-    private Integer userId; // customer
+    private Integer userId; // customer, (not restaurant)
     private Double total;
 
     @Enumerated(EnumType.STRING)

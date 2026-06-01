@@ -2,6 +2,7 @@ package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
 import com.quickbite.backend.dto.order_DTO.*;
+import com.quickbite.backend.dto.order_DTO.LiveOrder;
 import com.quickbite.backend.enums.OrderStatus;
 
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
@@ -34,6 +35,9 @@ public class OrderService {
     @Autowired
     private CartRepo cartRepo;
 
+    @Autowired
+    private UserRepo userRepo;
+
     public String placeOrder() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
@@ -45,6 +49,10 @@ public class OrderService {
         if (rawCartItems.isEmpty()) {
             throw new ResourceNotFoundException("Your cart is empty");
         }
+        Restaurant restaurant = rawCartItems.stream().findFirst().get().getRestaurant();
+        if (restaurant == null || !restaurant.getActive()) {
+            throw new ResourceNotFoundException("the restaurant from which you are trying to order is DEACTIVATED after you added the dish to cart.Please clear the cart and try to order from different restaurant.Thankyou for the cooperation");
+        }
 
         Double netTotal = 0.0;
 
@@ -52,7 +60,6 @@ public class OrderService {
             netTotal += item.getTotal();
         }
 
-        Restaurant restaurant = rawCartItems.stream().findFirst().get().getRestaurant();
 
         // set the order summary
         Order order = new Order();
@@ -92,13 +99,13 @@ public class OrderService {
 
             try {
                 orderItemRepo.save(orderItem);
-                cartRepo.deleteAllByUserUserId(userId);
                 System.out.println("item(s) saved to orderItems table successfully.");
             } catch (Exception e) {
                 log.error("Error in OrderService placeOrder() while saving orderItem : " + e);
                 throw new RuntimeException(e);
             }
         }
+        cartRepo.deleteAllByUserUserId(userId);
 
         return "your request is processed, check the order status";
     }
@@ -233,20 +240,25 @@ public class OrderService {
         }
     }
 
-    public List<PendingOrdersResponse> getPendingOrders() {
+    public List<NewOrdersResponse> getNewOrdersList() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
         Integer userId = userDetails.getUserId();
-        Integer restaurantId = restaurantRepo.findByUserUserId(userId).getRestaurantId();
+        Restaurant restaurant = restaurantRepo.findByUserUserId(userId);
+        if (restaurant == null || !restaurant.getActive()) {
+            throw new ResourceNotFoundException("Restaurant profile not created yet!");
+        }
 
-        // this is error bcause , status is stored in the orders table ,. not every item has status,.. but every order has a status and inside the order there are multiple items
+        Integer restaurantId = restaurant.getRestaurantId();
+        ;
+
         List<Order> pendingOrders = orderRepo.findByRestaurantRestaurantIdAndStatus(restaurantId, OrderStatus.PLACED);
 
         if (pendingOrders.isEmpty()) {
             throw new ResourceNotFoundException("You don't have any new orders...");
         }
 
-        ArrayList<PendingOrdersResponse> listOfNewOrders = new ArrayList<>();
+        ArrayList<NewOrdersResponse> listOfNewOrders = new ArrayList<>();
         for (Order order : pendingOrders) {
             Integer orderId = order.getOrderId();
 
@@ -266,7 +278,7 @@ public class OrderService {
                     })
                     .toList();
 
-            PendingOrdersResponse newOrder = new PendingOrdersResponse();
+            NewOrdersResponse newOrder = new NewOrdersResponse();
             newOrder.setOrderId(orderId);
             newOrder.setUserId(rawItems.get(0).getUser().getUserId());
             newOrder.setUserName(rawItems.get(0).getUserName());
@@ -289,7 +301,7 @@ public class OrderService {
             throw new ResourceNotFoundException("You don't have any live orders.");
         }
 
-        List<LiveOrderResponse> listOfOrders = new ArrayList<>();
+        List<CurrentOrder> listOfOrders = new ArrayList<>();
         for (Order order : orders) {
 
             Integer orderId = order.getOrderId();
@@ -306,7 +318,7 @@ public class OrderService {
                 return item;
             }).toList();
 
-            LiveOrderResponse response = new LiveOrderResponse();
+            CurrentOrder response = new CurrentOrder();
             response.setOrderId(orderId);
             response.setStatus(order.getStatus());
             response.setRestaurantId(order.getRestaurant().getRestaurantId());
@@ -318,7 +330,7 @@ public class OrderService {
         }
 
         Double netTotal = 0.0;
-        for (LiveOrderResponse order : listOfOrders) {
+        for (CurrentOrder order : listOfOrders) {
             netTotal += order.getTotal();
         }
 
@@ -326,5 +338,132 @@ public class OrderService {
         res.setOrders(listOfOrders);
         res.setNetTotal(netTotal);
         return res;
+    }
+
+    public List<PastOrder> getOrderHistoryOfCurrentUser() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        List<Order> rawOrderList = orderRepo.findByUserIdOrderByOrderIdAsc(userId);
+
+
+        List<Order> filteredOrderlist = rawOrderList.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED || o.getStatus() == OrderStatus.REJECTED || o.getStatus() == OrderStatus.DELIVERED).toList();
+
+        if (filteredOrderlist.isEmpty()) {
+            throw new ResourceNotFoundException("You don't have any past Order history.");
+        }
+
+        return filteredOrderlist.stream()
+                .map((order) -> {
+                    Integer orderId = order.getOrderId();
+                    List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+
+                    List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+                        Item item = new Item();
+                        item.setDishId(i.getDish().getDishId());
+                        item.setDishName(i.getDish().getName());
+                        item.setQty(i.getQty());
+                        item.setPrice(i.getPrice());
+                        item.setTotal(i.getTotal());
+
+                        return item;
+                    }).toList();
+
+                    PastOrder orderResponse = new PastOrder();
+                    orderResponse.setOrderId(orderId);
+                    orderResponse.setStatus(order.getStatus());
+                    orderResponse.setRestaurantId(order.getRestaurant().getRestaurantId());
+                    orderResponse.setRestaurantName(order.getRestaurant().getName());
+                    orderResponse.setItems(orderItems);
+                    orderResponse.setTotal(order.getTotal());
+
+                    return orderResponse;
+                }).toList();
+    }
+
+    public List<CurrentOrder> getLiveOrderOfCurrentUser() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        List<Order> rawOrderList = orderRepo.findByUserIdAndRestaurantActiveOrderByOrderIdAsc(userId, true);
+
+        List<Order> filteredOrderList = rawOrderList.stream().filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.REJECTED && o.getStatus() != OrderStatus.CANCELLED).toList();
+        if (filteredOrderList.isEmpty()) {
+            throw new ResourceNotFoundException("You don't have any ongoing live-orders.");
+        }
+
+        return filteredOrderList.stream()
+                .map((order) -> {
+                    Integer orderId = order.getOrderId();
+                    List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+
+                    List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+                        Item item = new Item();
+                        item.setDishId(i.getDish().getDishId());
+                        item.setDishName(i.getDish().getName());
+                        item.setQty(i.getQty());
+                        item.setPrice(i.getPrice());
+                        item.setTotal(i.getTotal());
+
+                        return item;
+                    }).toList();
+
+                    CurrentOrder orderResponse = new CurrentOrder();
+                    orderResponse.setOrderId(orderId);
+                    orderResponse.setStatus(order.getStatus());
+                    orderResponse.setRestaurantId(order.getRestaurant().getRestaurantId());
+                    orderResponse.setRestaurantName(order.getRestaurant().getName());
+                    orderResponse.setItems(orderItems);
+                    orderResponse.setTotal(order.getTotal());
+
+                    return orderResponse;
+                }).toList();
+    }
+
+    public List<LiveOrder> getLiveOrdersOfThisRestaurant() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+        Integer restaurantId = restaurantRepo.findByUserUserId(userId).getRestaurantId();
+
+        List<Order> rawOrderList = orderRepo.findByRestaurantRestaurantId(restaurantId);
+        List<Order> filteredOrderList = rawOrderList.stream().filter(o -> o.getStatus() != OrderStatus.DELIVERED && o.getStatus() != OrderStatus.REJECTED && o.getStatus() != OrderStatus.CANCELLED && o.getStatus() != OrderStatus.PLACED).toList();
+
+        List<LiveOrder> liveOrders = filteredOrderList.stream()
+                .map((order) -> {
+                    Integer orderId = order.getOrderId();
+                    List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+
+                    List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+                        Item item = new Item();
+                        item.setDishId(i.getDish().getDishId());
+                        item.setDishName(i.getDish().getName());
+                        item.setQty(i.getQty());
+                        item.setPrice(i.getPrice());
+                        item.setTotal(i.getTotal());
+
+                        return item;
+                    }).toList();
+
+                    LiveOrder orderResponse = new LiveOrder();
+                    orderResponse.setOrderId(orderId);
+                    orderResponse.setStatus(order.getStatus());
+                    orderResponse.setCustomerId(order.getUserId());
+                    AppUser user = userRepo.findById(order.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                    orderResponse.setCustomerName(user.getName()); // customer name
+                    orderResponse.setItems(orderItems);
+                    orderResponse.setTotal(order.getTotal());
+
+                    return orderResponse;
+                }).toList();
+
+        if (liveOrders.isEmpty()) {
+            throw new ResourceNotFoundException("You dont have any live ongoing orders.Thankyou");
+        }
+
+        return liveOrders;
+
     }
 }

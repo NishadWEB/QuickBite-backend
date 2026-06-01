@@ -11,4 +11,6 @@ public interface RestaurantRepo extends JpaRepository<Restaurant, Integer> {
     Restaurant findByUserUserId(Integer userId);
 
     boolean existsByUserUserId(Integer userId);
+
+    void deleteByUserUserId(Integer userId);
 }

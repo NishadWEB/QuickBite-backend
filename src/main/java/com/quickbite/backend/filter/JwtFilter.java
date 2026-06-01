@@ -2,6 +2,7 @@ package com.quickbite.backend.filter;
 
 import com.quickbite.backend.A2_service.JwtService;
 import com.quickbite.backend.A3_repo.UserRepo;
+import com.quickbite.backend.custom_exception.AccountDeactivatedException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.model.AppUser;
 import com.quickbite.backend.principal.UserPrincipal;
@@ -71,20 +72,28 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("{\"message\" : \"User not found.Please register\", \"time\" : \""+ LocalDateTime.now() +"\"}"));
+                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("{\"message\" : \"User not found.Please register\", \"time\" : \"" + LocalDateTime.now() + "\"}"));
 
-                    UserPrincipal userDetails = new UserPrincipal(user);
-                    Authentication authObj = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    if (user.getActive()) {
+                        UserPrincipal userDetails = new UserPrincipal(user);
+                        Authentication authObj = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
 
-                    SecurityContextHolder.getContext().setAuthentication(authObj);
+                        SecurityContextHolder.getContext().setAuthentication(authObj);
+                    } else {
+                        throw new AccountDeactivatedException("\"message\" : \"You account is deactivated, please register again with same email-id to activate again.\", \"time\" : \"" + LocalDateTime.now() + "\"");
+                    }
                 }
-            } catch (ResourceNotFoundException e) {
-                response.setStatus(403);
+            } catch (AccountDeactivatedException | ResourceNotFoundException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof AccountDeactivatedException) {
+                    response.setStatus(409);
+                } else {
+                    response.setStatus(403);
+                }
                 response.setContentType("application/json");
                 response.getWriter().write(e.getMessage());
                 System.out.println("error");
                 return;
-
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

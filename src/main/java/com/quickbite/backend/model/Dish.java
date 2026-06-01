@@ -26,6 +26,7 @@ public class Dish {
     private Integer price;
     private Double rating;
     private String description;
+    private Boolean availability;
 
     @Lob
     private byte[] image;

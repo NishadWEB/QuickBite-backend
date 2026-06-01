@@ -6,6 +6,6 @@ import java.util.List;
 
 @Data
 public class CurrentOrderResponse {
-    private List<LiveOrderResponse> orders;
+    private List<CurrentOrder> orders;
     private Double netTotal;
 }

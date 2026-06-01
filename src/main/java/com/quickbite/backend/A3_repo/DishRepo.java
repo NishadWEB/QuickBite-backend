@@ -9,4 +9,8 @@ import java.util.ArrayList;
 @Repository
 public interface DishRepo extends JpaRepository<Dish, Integer> {
     ArrayList<Dish> findByRestaurantRestaurantId(Integer restaurantId);
+
+    boolean existsByRestaurantRestaurantIdAndDishId(Integer restaurantId, Integer dishId);
+
+    Dish findByRestaurantRestaurantIdAndName(Integer restaurantId, String trim);
 }

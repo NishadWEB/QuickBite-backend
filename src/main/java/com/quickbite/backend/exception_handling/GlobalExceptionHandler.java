@@ -1,5 +1,6 @@
 package com.quickbite.backend.exception_handling;
 
+import com.quickbite.backend.custom_exception.AccountDeactivatedException;
 import com.quickbite.backend.custom_exception.AlreadyExistsException;
 import com.quickbite.backend.custom_exception.InvalidInputException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
@@ -76,6 +77,13 @@ public class GlobalExceptionHandler {
     public ErrResponse handle(IllegalStateException e){
         return new ErrResponse(e.getMessage(), LocalDateTime.now());
     }
+
+    @ExceptionHandler(AccountDeactivatedException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrResponse handle(AccountDeactivatedException e){
+        return new ErrResponse(e.getMessage(),LocalDateTime.now());
+    }
+
 
 
     @ExceptionHandler(Exception.class)
