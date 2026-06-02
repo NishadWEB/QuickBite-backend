@@ -4,6 +4,7 @@ import com.quickbite.backend.A3_repo.CartRepo;
 import com.quickbite.backend.A3_repo.DishRepo;
 import com.quickbite.backend.A3_repo.RestaurantRepo;
 import com.quickbite.backend.A3_repo.UserRepo;
+import com.quickbite.backend.custom_exception.AccountDeactivatedException;
 import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.cart_DTO.AddToCartDTO;
 import com.quickbite.backend.dto.Qty;
@@ -64,8 +65,16 @@ public class CartService {
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         // below three are for FK in cart_items table
-        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        AppUser user = userRepo.findByUserId(userId);
+        if(user == null || !user.getActive()){
+            throw new ResourceNotFoundException("User not found");
+        }
         Restaurant restaurant = restaurantRepo.findById(addToCartItem.getRestaurantId()).orElseThrow(() -> new ResourceNotFoundException("Restaurant Not Found!"));
+
+        if(!restaurant.getActive()){
+            throw new AccountDeactivatedException("This restaurant is not available. Please order from other restaurants");
+        }
+
         Integer dishId = addToCartItem.getDishId();
         Dish dish = dishRepo.findById(dishId).orElseThrow(() -> new ResourceNotFoundException("Dish Not Found!"));
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

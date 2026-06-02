@@ -78,7 +78,6 @@ public class UserController {
     public ResponseEntity<String> deleteCustomerAccount(@Valid @RequestBody PasswordDTO request) {
         String res = userService.deleteCustomerAccount(request);
         return ResponseEntity.status(200).body(res);
-
     }
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -161,6 +160,13 @@ public class UserController {
     @PostMapping("/auth/login/delivery-partner")
     public ResponseEntity<String> loginDeliveryPartner(@Valid @RequestBody LoginRequest request) {
         String res = userService.loginDeliveryPartner(request);
+        return ResponseEntity.status(200).body(res);
+    }
+
+    // deleting Delivery-partner account
+    @DeleteMapping("/delivery-partners/me")
+    public ResponseEntity<String> deleteDeliveryPartnerAccount(@Valid @RequestBody PasswordDTO request) {
+        String res = userService.deleteDeliveryPartnerAccount(request);
         return ResponseEntity.status(200).body(res);
     }
 }

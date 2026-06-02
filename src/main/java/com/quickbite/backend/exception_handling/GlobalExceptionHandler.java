@@ -1,9 +1,6 @@
 package com.quickbite.backend.exception_handling;
 
-import com.quickbite.backend.custom_exception.AccountDeactivatedException;
-import com.quickbite.backend.custom_exception.AlreadyExistsException;
-import com.quickbite.backend.custom_exception.InvalidInputException;
-import com.quickbite.backend.custom_exception.ResourceNotFoundException;
+import com.quickbite.backend.custom_exception.*;
 import com.quickbite.backend.dto.ErrResponse;
 import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -89,6 +86,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrResponse handle(NoResourceFoundException e){
         return new ErrResponse("Wrong URL, No such resource found.", LocalDateTime.now());
+    }
+
+    @ExceptionHandler(CannotDeleteException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public ErrResponse handle(CannotDeleteException e){
+        return new ErrResponse(e.getMessage(), LocalDateTime.now());
     }
 
 

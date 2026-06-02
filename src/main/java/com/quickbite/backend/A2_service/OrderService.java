@@ -122,15 +122,32 @@ public class OrderService {
     }
 
     public String acceptOrder(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
 
-        if (order.getStatus() != OrderStatus.PLACED) {
+        Restaurant restaurant = restaurantRepo.findByUserUserId(userId);
+
+        if (restaurant == null) {
+            throw new ResourceNotFoundException("Restaurant profile not found.");
+        }
+
+        Integer restaurantId = restaurant.getRestaurantId();
+
+        List<Order> order = orderRepo.findByOrderIdAndRestaurantRestaurantId(orderId, restaurantId);
+
+        if (order.isEmpty()) {
+            throw new ResourceNotFoundException("Sorry you dont have authority to update this order's status, because this order belongs to another restaurant.");
+        }
+
+        if (order.get(0).getStatus() != OrderStatus.PLACED) {
             throw new IllegalStateException("Only placed orders can be accepted");
         }
 
-        order.setStatus(OrderStatus.ACCEPTED);
+        order.get(0).setStatus(OrderStatus.ACCEPTED);
+
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
             return "Order is accepted";
         } catch (Exception e) {
             log.error("error in OrderService, acceptOrder() while orderRepo.save(order) : " + e);
@@ -139,15 +156,32 @@ public class OrderService {
     }
 
     public String rejectOrder(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
 
-        if (order.getStatus() != OrderStatus.PLACED) {
+        Restaurant restaurant = restaurantRepo.findByUserUserId(userId);
+
+        if (restaurant == null) {
+            throw new ResourceNotFoundException("Restaurant profile not found.");
+        }
+
+        Integer restaurantId = restaurant.getRestaurantId();
+
+        List<Order> order = orderRepo.findByOrderIdAndRestaurantRestaurantId(orderId, restaurantId);
+
+        if (order.isEmpty()) {
+            throw new ResourceNotFoundException("Sorry you dont have authority to update this order's status, because this order belongs to another restaurant.");
+        }
+
+        if (order.get(0).getStatus() != OrderStatus.PLACED) {
             throw new IllegalStateException("Only placed orders can be rejected");
         }
 
-        order.setStatus(OrderStatus.REJECTED);
+        order.get(0).setStatus(OrderStatus.REJECTED);
+
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
             return "Order is Rejected by restaurant for some reason.Sorry for the inconvenience";
         } catch (Exception e) {
             log.error("error in OrderService, rejectOrder() while orderRepo.save(order) : " + e);
@@ -181,17 +215,37 @@ public class OrderService {
     }
 
     public String markOrderAsReady(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
 
-        if (order.getStatus() != OrderStatus.ACCEPTED) {
+        Restaurant restaurant = restaurantRepo.findByUserUserId(userId);
+
+        if (restaurant == null) {
+            throw new ResourceNotFoundException("Restaurant profile not found.");
+        }
+
+        Integer restaurantId = restaurant.getRestaurantId();
+
+        List<Order> order = orderRepo.findByOrderIdAndRestaurantRestaurantId(orderId, restaurantId);
+
+        if (order.isEmpty()) {
+            throw new ResourceNotFoundException("Sorry you dont have authority to update this order's status, because this order belongs to another restaurant.");
+        }
+
+        if (order.get(0).getStatus() != OrderStatus.ACCEPTED) {
             throw new IllegalStateException("Only ACCEPTED orders can be marked as READY");
         }
 
-        order.setStatus(OrderStatus.READY);
+        order.get(0).setStatus(OrderStatus.READY);
+
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
+
             Integer deliveryPartner = chooseDeliveryPartner();
-            assignOrderToDeliveryPartner(order, deliveryPartner); // userId
+
+            assignOrderToDeliveryPartner(order.get(0), deliveryPartner);
+
             return "Order is Ready.Waiting to pickup by the delivery-partner";
         } catch (ResourceNotFoundException e) {
             throw e;
@@ -247,32 +301,67 @@ public class OrderService {
 
 
     public String markOrderAsOutForDelivery(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
 
-        if (order.getStatus() != OrderStatus.READY) {
-            throw new IllegalStateException("If the order is READY, only then you can pickup the order");
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+
+        if (deliveryPartner == null) {
+            throw new ResourceNotFoundException("Delivery partner not found.");
         }
 
-        order.setStatus(OrderStatus.OUT_FOR_DELIVERY);
+        Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+
+        System.out.println("order id = "+orderId);
+        System.out.println("partner is = "+deliveryPartnerId);
+        List<Order> order = orderRepo.findByOrderIdAndDeliveryPartnerId(orderId, deliveryPartnerId);
+
+        if (order.isEmpty()) {
+            throw new ResourceNotFoundException("Sorry you dont have authority to update this order's status, because this order belongs to another delivery partner.");
+        }
+
+        System.out.println(order.get(0));
+
+        if (order.get(0).getStatus() != OrderStatus.READY) {
+            throw new IllegalStateException("If the order is READY, only then you can pickup the order.");
+        }
+
+        order.get(0).setStatus(OrderStatus.OUT_FOR_DELIVERY);
+
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
             return "Order is out for delivery.";
         } catch (Exception e) {
-            log.error("error in OrderService, orderPicked() : " + e);
+            log.error("error in OrderService, markOrderAsOutForDelivery() : " + e);
             throw new RuntimeException(e);
         }
     }
 
     public String markOrderAsArrived(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
 
-        if (order.getStatus() != OrderStatus.OUT_FOR_DELIVERY) {
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+
+        if(deliveryPartner == null){
+            throw new ResourceNotFoundException("Delivery partner not found.");
+        }
+
+        Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+        List<Order> order = orderRepo.findByOrderIdAndDeliveryPartnerId(orderId, deliveryPartnerId);
+        if(order.isEmpty()){
+            throw new ResourceNotFoundException("Sorry you dont have an authority to update this order's status, because this order belongs to other delivery partner");
+        }
+
+        if (order.get(0).getStatus() != OrderStatus.OUT_FOR_DELIVERY) {
             throw new IllegalStateException("You cannot mark it as arrived if the order is not out for delivery");
         }
 
-        order.setStatus(OrderStatus.ARRIVED);
+        order.get(0).setStatus(OrderStatus.ARRIVED);
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
             return "Order is arrived.";
         } catch (Exception e) {
             log.error("error in OrderService, orderArrived() : " + e);
@@ -281,15 +370,33 @@ public class OrderService {
     }
 
     public String markOrderAsDelivered(Integer orderId) {
-        Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
 
-        if (order.getStatus() != OrderStatus.ARRIVED) {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+
+        if (deliveryPartner == null) {
+            throw new ResourceNotFoundException("Delivery partner not found.");
+        }
+
+        Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+
+        List<Order> order = orderRepo.findByOrderIdAndDeliveryPartnerId(orderId, deliveryPartnerId);
+
+        if (order.isEmpty()) {
+            throw new ResourceNotFoundException("Sorry you dont have authority to update this order's status, because this order belongs to another delivery partner.");
+        }
+
+        if (order.get(0).getStatus() != OrderStatus.ARRIVED) {
             throw new IllegalStateException("You cannot mark it as delivered if the order is not arrived");
         }
 
-        order.setStatus(OrderStatus.DELIVERED);
+        order.get(0).setStatus(OrderStatus.DELIVERED);
+
         try {
-            orderRepo.save(order);
+            orderRepo.save(order.get(0));
             return "Order is delivered successfully.";
         } catch (Exception e) {
             log.error("error in OrderService, orderDelivered() : " + e);
@@ -307,7 +414,6 @@ public class OrderService {
         }
 
         Integer restaurantId = restaurant.getRestaurantId();
-        ;
 
         List<Order> pendingOrders = orderRepo.findByRestaurantRestaurantIdAndStatus(restaurantId, OrderStatus.PLACED);
 
@@ -347,55 +453,55 @@ public class OrderService {
         return listOfNewOrders;
     }
 
-    public CurrentOrderResponse getCurrentOrders() {
-        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
-        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
-        Integer userId = userDetails.getUserId();
-
-        List<Order> orders = orderRepo.findByUserId(userId);
-
-        if (orders.isEmpty()) {
-            throw new ResourceNotFoundException("You don't have any live orders.");
-        }
-
-        List<CurrentOrder> listOfOrders = new ArrayList<>();
-        for (Order order : orders) {
-
-            Integer orderId = order.getOrderId();
-            List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
-
-            List<Item> orderItems = rawOrderItems.stream().map((i) -> {
-                Item item = new Item();
-                item.setDishId(i.getDish().getDishId());
-                item.setDishName(i.getDish().getName());
-                item.setQty(i.getQty());
-                item.setPrice(i.getPrice());
-                item.setTotal(i.getTotal());
-
-                return item;
-            }).toList();
-
-            CurrentOrder response = new CurrentOrder();
-            response.setOrderId(orderId);
-            response.setStatus(order.getStatus());
-            response.setRestaurantId(order.getRestaurant().getRestaurantId());
-            response.setRestaurantName(order.getRestaurant().getName());
-            response.setItems(orderItems);
-            response.setTotal(order.getTotal());
-
-            listOfOrders.add(response);
-        }
-
-        Double netTotal = 0.0;
-        for (CurrentOrder order : listOfOrders) {
-            netTotal += order.getTotal();
-        }
-
-        CurrentOrderResponse res = new CurrentOrderResponse();
-        res.setOrders(listOfOrders);
-        res.setNetTotal(netTotal);
-        return res;
-    }
+//    public CurrentOrderResponse getCurrentOrders() {
+//        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+//        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+//        Integer userId = userDetails.getUserId();
+//
+//        List<Order> orders = orderRepo.findByUserId(userId);
+//
+//        if (orders.isEmpty()) {
+//            throw new ResourceNotFoundException("You don't have any live orders.");
+//        }
+//
+//        List<CurrentOrder> listOfOrders = new ArrayList<>();
+//        for (Order order : orders) {
+//
+//            Integer orderId = order.getOrderId();
+//            List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+//
+//            List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+//                Item item = new Item();
+//                item.setDishId(i.getDish().getDishId());
+//                item.setDishName(i.getDish().getName());
+//                item.setQty(i.getQty());
+//                item.setPrice(i.getPrice());
+//                item.setTotal(i.getTotal());
+//
+//                return item;
+//            }).toList();
+//
+//            CurrentOrder response = new CurrentOrder();
+//            response.setOrderId(orderId);
+//            response.setStatus(order.getStatus());
+//            response.setRestaurantId(order.getRestaurant().getRestaurantId());
+//            response.setRestaurantName(order.getRestaurant().getName());
+//            response.setItems(orderItems);
+//            response.setTotal(order.getTotal());
+//
+//            listOfOrders.add(response);
+//        }
+//
+//        Double netTotal = 0.0;
+//        for (CurrentOrder order : listOfOrders) {
+//            netTotal += order.getTotal();
+//        }
+//
+//        CurrentOrderResponse res = new CurrentOrderResponse();
+//        res.setOrders(listOfOrders);
+//        res.setNetTotal(netTotal);
+//        return res;
+//    }
 
     public List<PastOrder> getOrderHistoryOfCurrentUser() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
@@ -596,6 +702,13 @@ public class OrderService {
                     pastOrderResponse.setStatus(order.getStatus());
                     pastOrderResponse.setRestaurantId(order.getRestaurant().getRestaurantId());
                     pastOrderResponse.setRestaurantName(order.getRestaurant().getName());
+
+                    AppUser user = userRepo.findById(order.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found."));
+
+                    pastOrderResponse.setCustomerId(user.getUserId());
+                    pastOrderResponse.setCustomerName(user.getName());
+                    pastOrderResponse.setCustomerAddress(user.getAddress());
+
                     pastOrderResponse.setItems(orderItems);
                     pastOrderResponse.setTotal(order.getTotal());
 

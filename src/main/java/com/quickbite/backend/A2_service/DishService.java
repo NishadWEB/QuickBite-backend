@@ -40,7 +40,12 @@ public class DishService {
     public String addDish(DishDTO dish) {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
-        AppUser user = userRepo.findByUserId(userDetails.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        AppUser user = userRepo.findByUserId(userDetails.getUserId());
+
+        if(user == null || !user.getActive()){
+            throw new ResourceNotFoundException("User not found");
+        }
+
         Integer userId = user.getUserId();
 
         Restaurant restaurant = restaurantRepo.findByUserUserId(userId);

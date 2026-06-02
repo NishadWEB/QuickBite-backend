@@ -42,7 +42,11 @@ public class RestaurantService {
 
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
-        AppUser user = userRepo.findByUserId(userDetails.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+        AppUser user = userRepo.findByUserId(userDetails.getUserId());
+
+        if(user == null || !user.getActive()){
+            throw new ResourceNotFoundException("User not found");
+        }
 
         boolean isRestaurantExists = restaurantRepo.existsByUserUserId(user.getUserId());
 

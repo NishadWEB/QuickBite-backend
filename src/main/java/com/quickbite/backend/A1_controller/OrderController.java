@@ -16,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/restaurants/orders")
+@CrossOrigin(origins = "*")
 public class OrderController {
 
     @Autowired

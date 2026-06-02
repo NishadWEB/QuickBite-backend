@@ -1,10 +1,7 @@
 package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
-import com.quickbite.backend.custom_exception.AccountDeactivatedException;
-import com.quickbite.backend.custom_exception.AlreadyExistsException;
-import com.quickbite.backend.custom_exception.InvalidInputException;
-import com.quickbite.backend.custom_exception.ResourceNotFoundException;
+import com.quickbite.backend.custom_exception.*;
 import com.quickbite.backend.dto.*;
 import com.quickbite.backend.dto.restaurant_DTO.DeliveryPartnerRegisterRequest;
 import com.quickbite.backend.enums.OrderStatus;
@@ -72,7 +69,7 @@ public class UserService {
         AppUser oldUser = userRepo.findByEmail(request.getEmail());
         if (oldUser != null) {
 
-            if(oldUser.getActive()){ // if true, then user exists, if false, then user is deactivated
+            if (oldUser.getActive()) { // if true, then user exists, if false, then user is deactivated
                 throw new AlreadyExistsException("user with this email-id already exists.");
             }
 
@@ -136,7 +133,7 @@ public class UserService {
             authObj2 = authenticationManager.authenticate(authObj1);
         } catch (InternalAuthenticationServiceException e) {
             Throwable cause = e.getCause();
-            if(cause instanceof AccountDeactivatedException){
+            if (cause instanceof AccountDeactivatedException) {
                 throw (AccountDeactivatedException) cause;
             }
             throw e;
@@ -175,7 +172,11 @@ public class UserService {
             link = "http://localhost:8080/api/v1/restaurants/email?token=" + token + "&newEmail=" + newEmail;
         }
 
-        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User does'nt exists!"));
+        AppUser user = userRepo.findByUserId(userId);
+
+        if (user == null || !user.getActive()) {
+            throw new ResourceNotFoundException("User not found");
+        }
 
         String to = user.getEmail();
         String subject = "Confirm email update";
@@ -191,7 +192,12 @@ public class UserService {
     public String verifyEmail(String token, String newEmail) {
         try {
             String userId = jwtService.extractAllClaims(token).getSubject();
-            AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("User not found!"));
+            AppUser user = userRepo.findByUserId(Integer.valueOf(userId));
+
+            if (user == null || !user.getActive()) {
+                throw new ResourceNotFoundException("User not found");
+            }
+
             user.setEmail(newEmail);
             userRepo.save(user);
             return "Email updated successfully.\nNow you can use this new email \"" + newEmail + "\" to login.";
@@ -214,7 +220,11 @@ public class UserService {
     public String updatePassword(PasswordChangeDTO request) {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
-        AppUser user = userRepo.findByUserId(userDetails.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        AppUser user = userRepo.findByUserId(userDetails.getUserId());
+
+        if (user == null || !user.getActive()) {
+            throw new ResourceNotFoundException("User not found");
+        }
 
         String actualOldPassword = user.getPassword(); // encoded
         String enteredOldPassword = request.getOldPassword();
@@ -271,7 +281,12 @@ public class UserService {
         String confirmPassword = request.getConfirmPassword();
 
         if (newPassword.equals(confirmPassword)) {
-            AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found.May be user_id is tampered!"));
+            AppUser user = userRepo.findByUserId(userId);
+
+            if (user == null || !user.getActive()) {
+                throw new ResourceNotFoundException("User not found.May be user_id is tampered");
+            }
+
             user.setPassword(passwordEncoder.encode(newPassword));
             userRepo.save(user);
             return "Password changed successfully";
@@ -287,7 +302,12 @@ public class UserService {
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
         Integer userId = userDetails.getUserId();
 
-        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        AppUser user = userRepo.findByUserId(userId);
+
+        if (user == null || !user.getActive()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         String actualPassword = user.getPassword();
 
         if (passwordEncoder.matches(enteredPassword, actualPassword)) {
@@ -316,8 +336,8 @@ public class UserService {
         }
 
         AppUser oldUser = userRepo.findByEmail(request.getEmail());
-        if(oldUser != null){
-            if(oldUser.getActive()){
+        if (oldUser != null) {
+            if (oldUser.getActive()) {
                 throw new AlreadyExistsException("User with this email-id already exists.");
             }
 
@@ -325,12 +345,12 @@ public class UserService {
             oldUser.setActive(true);
 
             Restaurant restaurant = restaurantRepo.findByUserUserId(oldUser.getUserId());
-            if(restaurant != null){
+            if (restaurant != null) {
                 restaurant.setActive(true);
 
                 List<Dish> rawListOfDishes = dishRepo.findByRestaurantRestaurantId(restaurant.getRestaurantId());
-                if(!rawListOfDishes.isEmpty()){
-                    for(Dish dish : rawListOfDishes){
+                if (!rawListOfDishes.isEmpty()) {
+                    for (Dish dish : rawListOfDishes) {
                         dish.setAvailability(true);
                     }
                 }
@@ -338,7 +358,7 @@ public class UserService {
                     restaurantRepo.save(restaurant);
                     dishRepo.saveAll(rawListOfDishes);
                 } catch (Exception e) {
-                    log.error("error in UserService in registerRestaurant() while restaurantRepo.save() : "+ e);
+                    log.error("error in UserService in registerRestaurant() while restaurantRepo.save() : " + e);
                     throw new RuntimeException(e);
                 }
             }
@@ -394,14 +414,13 @@ public class UserService {
 
         try {
             authObj2 = authenticationManager.authenticate(authObj1);
-        }catch (InternalAuthenticationServiceException e){
+        } catch (InternalAuthenticationServiceException e) {
             Throwable cause = e.getCause();
-            if(cause instanceof  AccountDeactivatedException){
+            if (cause instanceof AccountDeactivatedException) {
                 throw (AccountDeactivatedException) cause;
             }
             throw e;
-        }
-        catch (BadCredentialsException | UsernameNotFoundException e) {
+        } catch (BadCredentialsException | UsernameNotFoundException e) {
             throw new BadCredentialsException("Invalid email or pass");
         } catch (Exception e) {
             log.error("error in loginRestaurant() is : " + e);
@@ -423,7 +442,12 @@ public class UserService {
         UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
         Integer userId = userDetails.getUserId();
 
-        AppUser user = userRepo.findByUserId(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        AppUser user = userRepo.findByUserId(userId);
+
+        if (user == null || !user.getActive()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
         String actualPassword = user.getPassword();
 
         if (passwordEncoder.matches(enteredPassword, actualPassword)) {
@@ -435,10 +459,22 @@ public class UserService {
                 List<Order> rawListOfOrders = orderRepo.findByRestaurantRestaurantId(restaurantId);
                 List<Order> listOfOrders = rawListOfOrders.stream().filter(o -> o.getStatus() != OrderStatus.CANCELLED && o.getStatus() != OrderStatus.REJECTED && o.getStatus() != OrderStatus.DELIVERED).toList();
 
-                // forcefully REJECTING all orders except cancelled, rejected and delivered, as restaurant account is deleting;
-                for(Order order : listOfOrders){
-                    order.setStatus(OrderStatus.REJECTED);
+
+                if (!listOfOrders.isEmpty()) {
+                    for (Order order : listOfOrders) {
+                        // forcefully REJECTING, placed orders, as restaurant account is deleting;
+                        if (order.getStatus() == OrderStatus.PLACED) {
+                            order.setStatus(OrderStatus.REJECTED);
+                        } else {
+                            throw new CannotDeleteException("You have ongoing orders, please wait until your orders are delivered.");
+                        }
+                    }
                 }
+
+                // forcefully REJECTING, placed orders except canceled, rejected and delivered, as restaurant account is deleting;
+//                for (Order order : listOfOrders) {
+//                    order.setStatus(OrderStatus.REJECTED);
+//                }
                 try {
                     // saving order with Status = REJECTED
                     orderRepo.saveAll(listOfOrders);
@@ -491,8 +527,8 @@ public class UserService {
         }
 
         AppUser oldUser = userRepo.findByEmail(request.getEmail());
-        if(oldUser != null){
-            if(oldUser.getActive()){
+        if (oldUser != null) {
+            if (oldUser.getActive()) {
                 throw new AlreadyExistsException("User with this email-id already exists");
             }
 
@@ -569,5 +605,48 @@ public class UserService {
             return jwtService.generateToken(userDetails, expiry);
         }
         return null;
+    }
+
+    public String deleteDeliveryPartnerAccount(@Valid PasswordDTO request) {
+        String enteredPassword = request.getPassword();
+
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        AppUser user = userRepo.findByUserId(userId);
+
+        if (user == null || !user.getActive()) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        String actualPassword = user.getPassword();
+        if (passwordEncoder.matches(enteredPassword, actualPassword)) {
+
+            DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+            Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+
+            List<Order> orders = orderRepo.findByDeliveryPartnerId(deliveryPartnerId);
+            if (!orders.isEmpty()) {
+                for (Order order : orders) {
+                    if (order.getStatus() == OrderStatus.OUT_FOR_DELIVERY || order.getStatus() == OrderStatus.ARRIVED) {
+                        throw new CannotDeleteException("You have ongoing orders!, please deliver the orders, then you can delete your account.");
+                    }
+                }
+            }
+
+            try {
+                deliveryPartner.setActive(false);
+                user.setActive(false);
+
+                deliveryPartnerRepo.save(deliveryPartner);
+                userRepo.save(user);
+                return "Account de-activated successfully";
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            throw new InvalidInputException("Invalid password");
+        }
     }
 }

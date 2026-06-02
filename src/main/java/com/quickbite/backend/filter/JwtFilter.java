@@ -72,16 +72,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
             try {
                 if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId)).orElseThrow(() -> new ResourceNotFoundException("{\"message\" : \"User not found.Please register\", \"time\" : \"" + LocalDateTime.now() + "\"}"));
+                    AppUser user = userRepo.findByUserId(Integer.valueOf(userId));
 
-                    if (user.getActive()) {
-                        UserPrincipal userDetails = new UserPrincipal(user);
-                        Authentication authObj = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-                        SecurityContextHolder.getContext().setAuthentication(authObj);
-                    } else {
+                    if (user == null) {
+                        throw new ResourceNotFoundException("{\"message\" : \"User not found.Please register\", \"time\" : \"" + LocalDateTime.now() + "\"}");
+                    } else if (!user.getActive()) {
                         throw new AccountDeactivatedException("\"message\" : \"You account is deactivated, please register again with same email-id to activate again.\", \"time\" : \"" + LocalDateTime.now() + "\"");
                     }
+                    UserPrincipal userDetails = new UserPrincipal(user);
+                    Authentication authObj = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+
+                    SecurityContextHolder.getContext().setAuthentication(authObj);
+
                 }
             } catch (AccountDeactivatedException | ResourceNotFoundException e) {
                 Throwable cause = e.getCause();
