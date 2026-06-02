@@ -2,6 +2,7 @@ package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerPastOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
 import com.quickbite.backend.dto.order_DTO.LiveOrder;
 import com.quickbite.backend.enums.OrderStatus;
@@ -533,16 +534,18 @@ public class OrderService {
 
         Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
 
-        Order newOrder = orderRepo.findByDeliveryPartnerIdAndStatus(deliveryPartnerId, OrderStatus.READY);
+        List<Order> newOrder = orderRepo.findByDeliveryPartnerIdAndStatus(deliveryPartnerId, OrderStatus.READY);
 
-        if (newOrder == null) {
+        if (newOrder.isEmpty()) {
             throw new ResourceNotFoundException("You don't have any new orders...");
         }
 
         return getDeliveryPartnerNewOrderResponse(newOrder);
     }
 
-    private DeliveryPartnerNewOrderResponse getDeliveryPartnerNewOrderResponse(Order newOrder) {
+    private DeliveryPartnerNewOrderResponse getDeliveryPartnerNewOrderResponse(List<Order> o) {
+        Order newOrder = o.get(0);
+
         DeliveryPartnerNewOrderResponse newOrderResponse = new DeliveryPartnerNewOrderResponse();
         newOrderResponse.setOrderId(newOrder.getOrderId());
         newOrderResponse.setStatus(newOrder.getStatus());
@@ -551,5 +554,51 @@ public class OrderService {
         newOrderResponse.setRestaurantAddress(newOrder.getRestaurant().getStreetAddress());
         newOrderResponse.setEarnings(35.0);
         return newOrderResponse;
+    }
+
+    public List<DeliveryPartnerPastOrderResponse> getOrderHistoryOfCurrentDeliveryPartner() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+        if(deliveryPartner == null){
+            throw new ResourceNotFoundException("Delivery partner does'nt exist.");
+        }
+
+        // for now status is always DELIVERED once the order is picked by delivery boy(best case scenario)
+        List<Order> orderlist = orderRepo.findByDeliveryPartnerIdAndStatus(deliveryPartner.getDeliveryPartnerId(), OrderStatus.DELIVERED);
+
+        if (orderlist.isEmpty()) {
+            throw new ResourceNotFoundException("You don't have any past Order history (which is DELIVERED).");
+        }
+
+        return orderlist.stream()
+                .map((order) -> {
+                    Integer orderId = order.getOrderId();
+                    List<OrderItem> rawOrderItems = orderItemRepo.findByOrderOrderId(orderId);
+
+                    List<Item> orderItems = rawOrderItems.stream().map((i) -> {
+                        Item item = new Item();
+                        item.setDishId(i.getDish().getDishId());
+                        item.setDishName(i.getDish().getName());
+                        item.setQty(i.getQty());
+                        item.setPrice(i.getPrice());
+                        item.setTotal(i.getTotal());
+
+                        return item;
+                    }).toList();
+
+                    DeliveryPartnerPastOrderResponse pastOrderResponse = new DeliveryPartnerPastOrderResponse();
+                    pastOrderResponse.setOrderId(orderId);
+                    pastOrderResponse.setStatus(order.getStatus());
+                    pastOrderResponse.setRestaurantId(order.getRestaurant().getRestaurantId());
+                    pastOrderResponse.setRestaurantName(order.getRestaurant().getName());
+                    pastOrderResponse.setItems(orderItems);
+                    pastOrderResponse.setTotal(order.getTotal());
+
+                    return pastOrderResponse;
+                }).toList();
+
     }
 }

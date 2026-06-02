@@ -23,5 +23,5 @@ public interface OrderRepo extends JpaRepository<Order, Integer> {
 
     List<Order> findByUserIdAndRestaurantActiveOrderByOrderIdAsc(Integer userId, boolean active);
 
-    Order findByDeliveryPartnerIdAndStatus(Integer deliveryPartnerId, OrderStatus orderStatus);
+    List<Order> findByDeliveryPartnerIdAndStatus(Integer deliveryPartnerId, OrderStatus orderStatus);
 }

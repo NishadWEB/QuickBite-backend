@@ -2,8 +2,10 @@ package com.quickbite.backend.A1_controller;
 
 import com.quickbite.backend.A2_service.OrderService;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerPastOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
 import com.quickbite.backend.dto.order_DTO.LiveOrder;
+import org.aspectj.weaver.ResolvedPointcutDefinition;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +38,7 @@ public class OrderController {
     }
 
     // fetch all orders of a customer, (order history)
-    @GetMapping()
+    @GetMapping("/c")
     public ResponseEntity<List<PastOrder>> getOrderHistoryOfCurrentUser(){
         List<PastOrder> res = orderService.getOrderHistoryOfCurrentUser();
         return ResponseEntity.status(200).body(res);
@@ -121,4 +123,15 @@ public class OrderController {
         DeliveryPartnerNewOrderResponse res = orderService.getNewOrdersListOfCurrentDeliveryPartner();
         return ResponseEntity.status(200).body(res);
     }
+
+    // fetch all past orders of Delivery-partner, (order history)
+    @GetMapping("/d")
+    public ResponseEntity<List<DeliveryPartnerPastOrderResponse>> getOrderHistoryOfCurrentDeliveryPartner(){
+        List<DeliveryPartnerPastOrderResponse> res = orderService.getOrderHistoryOfCurrentDeliveryPartner();
+        return ResponseEntity.status(200).body(res);
+    }
+
+    @GetMapping("/d/live-orders")
+    public ResponseEntity<List<>>
+
 }

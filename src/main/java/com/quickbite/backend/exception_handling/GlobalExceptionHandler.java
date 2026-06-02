@@ -14,6 +14,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.time.LocalDateTime;
 
@@ -82,6 +83,12 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrResponse handle(AccountDeactivatedException e){
         return new ErrResponse(e.getMessage(),LocalDateTime.now());
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErrResponse handle(NoResourceFoundException e){
+        return new ErrResponse("Wrong URL, No such resource found.", LocalDateTime.now());
     }
 
 
