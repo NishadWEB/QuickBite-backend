@@ -8,10 +8,7 @@ import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.dto.*;
 import com.quickbite.backend.dto.restaurant_DTO.DeliveryPartnerRegisterRequest;
 import com.quickbite.backend.enums.OrderStatus;
-import com.quickbite.backend.model.AppUser;
-import com.quickbite.backend.model.Dish;
-import com.quickbite.backend.model.Order;
-import com.quickbite.backend.model.Restaurant;
+import com.quickbite.backend.model.*;
 import com.quickbite.backend.principal.UserPrincipal;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
@@ -60,13 +57,10 @@ public class UserService {
     private OrderRepo orderRepo;
 
     @Autowired
-    private OrderItemRepo orderItemRepo;
-
-    @Autowired
-    private CartRepo cartRepo;
-
-    @Autowired
     private DishRepo dishRepo;
+
+    @Autowired
+    private DeliveryPartnerRepo deliveryPartnerRepo;
 
     @Transactional
     public String registerCustomer(CustomerRegisterRequest request) {
@@ -509,8 +503,12 @@ public class UserService {
             oldUser.setPhone(request.getPhone());
             oldUser.setRole("ROLE_DELIVERY_PARTNER");
 
+            DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(oldUser.getUserId());
+            deliveryPartner.setActive(true);
+
             try {
                 userRepo.save(oldUser);
+                deliveryPartnerRepo.save(deliveryPartner);
                 String subject = "Welcome BACK to QuickBite \uD83C\uDF89";
                 String message = "Congratulations!\nWelcome BACK to the quickbite community as our Delivery partner.";
                 emailService.sendMail(oldUser.getEmail(), subject, message);
@@ -532,8 +530,13 @@ public class UserService {
         user.setPhone(request.getPhone());
         user.setRole("ROLE_DELIVERY_PARTNER");
 
+        DeliveryPartner deliveryPartner = new DeliveryPartner();
+        deliveryPartner.setUser(user);
+        deliveryPartner.setActive(true);
+
         try {
             userRepo.save(user);
+            deliveryPartnerRepo.save(deliveryPartner);
             String subject = "Welcome to QuickBite \uD83C\uDF89";
             String message = "Congratulations!\nWelcome to the quickbite community as our Delivery partner.";
             emailService.sendMail(user.getEmail(), subject, message);

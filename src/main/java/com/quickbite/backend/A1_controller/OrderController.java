@@ -1,12 +1,14 @@
 package com.quickbite.backend.A1_controller;
 
 import com.quickbite.backend.A2_service.OrderService;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
 import com.quickbite.backend.dto.order_DTO.LiveOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -113,13 +115,10 @@ public class OrderController {
         return ResponseEntity.status(200).body(res);
     }
 
-    // Live order tracking by 'Customer'
-//    @GetMapping("/current-orders")
-//    public ResponseEntity<CurrentOrderResponse> getCurrentOrders() {
-//        CurrentOrderResponse res = orderService.getCurrentOrders();
-//        return ResponseEntity.status(200).body(res);
-//    }
-
-
-
+    // to fetch by delivery-partner in 'New Orders' window (notification)
+    @GetMapping("/d/new-orders")
+    public ResponseEntity<DeliveryPartnerNewOrderResponse> getNewOrdersListOfCurrentDeliveryPartner() {
+        DeliveryPartnerNewOrderResponse res = orderService.getNewOrdersListOfCurrentDeliveryPartner();
+        return ResponseEntity.status(200).body(res);
+    }
 }

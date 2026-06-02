@@ -1,6 +1,7 @@
 package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
 import com.quickbite.backend.dto.order_DTO.LiveOrder;
 import com.quickbite.backend.enums.OrderStatus;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -37,6 +39,12 @@ public class OrderService {
 
     @Autowired
     private UserRepo userRepo;
+
+    @Autowired
+    private AssignmentStateRepo assignmentStateRepo;
+
+    @Autowired
+    private DeliveryPartnerRepo deliveryPartnerRepo;
 
     public String placeOrder() {
         Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
@@ -178,16 +186,62 @@ public class OrderService {
 
         order.setStatus(OrderStatus.READY);
         try {
-            System.out.println("before save");
             orderRepo.save(order);
-            System.out.println("after save");
+            Integer deliveryPartner = chooseDeliveryPartner();
+            assignOrderToDeliveryPartner(order, deliveryPartner); // userId
             return "Order is Ready.Waiting to pickup by the delivery-partner";
+        } catch (ResourceNotFoundException e) {
+            throw e;
         } catch (Exception e) {
-            System.out.println("error broo");
             log.error("error in OrderService, orderReady() : " + e);
             throw new RuntimeException(e);
         }
     }
+
+    public Integer chooseDeliveryPartner() {
+        Integer lastAssignedPartnerId = 0;
+
+        AssignmentState assignedPartner = assignmentStateRepo.findById(1).orElse(null);
+
+        if (assignedPartner != null) {
+            lastAssignedPartnerId = assignedPartner.getLastAssignedPartnerId();
+        }
+
+        Integer nextDeliveryPartnerId = lastAssignedPartnerId + 1;
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findById(nextDeliveryPartnerId).orElse(null);
+
+        if (deliveryPartner == null) {
+            deliveryPartner = deliveryPartnerRepo.findById(1).orElseThrow(() -> new ResourceNotFoundException("there is no single delivery partners registered to the system yet! please be patient."));
+        }
+
+        // updating the lastAssignedPartnerId for next time
+        if (assignedPartner != null) {
+            assignedPartner.setLastAssignedPartnerId(deliveryPartner.getDeliveryPartnerId());
+        } else {
+            AssignmentState newPartner = new AssignmentState();
+            newPartner.setLastAssignedPartnerId(deliveryPartner.getDeliveryPartnerId());
+            try {
+                assignmentStateRepo.save(newPartner);
+            } catch (Exception e) {
+                log.error("error in OrderService chooseDeliveryParnter() : " + e);
+                throw new RuntimeException(e);
+            }
+        }
+        return deliveryPartner.getDeliveryPartnerId();
+    }
+
+    public void assignOrderToDeliveryPartner(Order order, Integer deliveryPartnerId) {
+        // assigning part is here
+        order.setDeliveryPartnerId(deliveryPartnerId);
+        try {
+            orderRepo.save(order);
+        } catch (Exception e) {
+            log.error("error in OrderService, assignOrderToDeliveryPartner() : " + e);
+            throw new RuntimeException(e);
+        }
+
+    }
+
 
     public String markOrderAsOutForDelivery(Integer orderId) {
         Order order = orderRepo.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("there is no new order with 'order-id = " + orderId + "'"));
@@ -465,5 +519,37 @@ public class OrderService {
 
         return liveOrders;
 
+    }
+
+    public DeliveryPartnerNewOrderResponse getNewOrdersListOfCurrentDeliveryPartner() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+        Integer userId = userDetails.getUserId();
+
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+        if (deliveryPartner == null || !deliveryPartner.getActive()) {
+            throw new ResourceNotFoundException("Delivery partner deoes'nt exist");
+        }
+
+        Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+
+        Order newOrder = orderRepo.findByDeliveryPartnerIdAndStatus(deliveryPartnerId, OrderStatus.READY);
+
+        if (newOrder == null) {
+            throw new ResourceNotFoundException("You don't have any new orders...");
+        }
+
+        return getDeliveryPartnerNewOrderResponse(newOrder);
+    }
+
+    private DeliveryPartnerNewOrderResponse getDeliveryPartnerNewOrderResponse(Order newOrder) {
+        DeliveryPartnerNewOrderResponse newOrderResponse = new DeliveryPartnerNewOrderResponse();
+        newOrderResponse.setOrderId(newOrder.getOrderId());
+        newOrderResponse.setStatus(newOrder.getStatus());
+        newOrderResponse.setRestaurantId(newOrder.getRestaurant().getRestaurantId());
+        newOrderResponse.setRestaurantName(newOrder.getRestaurant().getName());
+        newOrderResponse.setRestaurantAddress(newOrder.getRestaurant().getStreetAddress());
+        newOrderResponse.setEarnings(35.0);
+        return newOrderResponse;
     }
 }

@@ -18,6 +18,8 @@ public class Order {
     private Integer userId; // customer, (not restaurant)
     private Double total;
 
+    private Integer deliveryPartnerId;
+
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
     private String address;
