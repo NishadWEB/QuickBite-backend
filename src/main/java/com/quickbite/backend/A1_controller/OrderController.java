@@ -1,6 +1,7 @@
 package com.quickbite.backend.A1_controller;
 
 import com.quickbite.backend.A2_service.OrderService;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerLiveOrderResponse;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerPastOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
@@ -132,6 +133,9 @@ public class OrderController {
     }
 
     @GetMapping("/d/live-orders")
-    public ResponseEntity<List<>>
+    public ResponseEntity<List<DeliveryPartnerLiveOrderResponse>> getLiveOrdersOfCurrentDeliveryPartner(){
+        List<DeliveryPartnerLiveOrderResponse> res = orderService.getLiveOrdersOfCurrentDeliveryPartner();
+        return ResponseEntity.status(200).body(res);
+    }
 
 }

@@ -22,5 +22,5 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
-    private String address;
+    private String address; // restaurantAddress
 }

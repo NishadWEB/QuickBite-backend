@@ -1,6 +1,7 @@
 package com.quickbite.backend.A2_service;
 
 import com.quickbite.backend.A3_repo.*;
+import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerLiveOrderResponse;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerNewOrderResponse;
 import com.quickbite.backend.dto.delivery_DTO.DeliveryPartnerPastOrderResponse;
 import com.quickbite.backend.dto.order_DTO.*;
@@ -11,6 +12,7 @@ import com.quickbite.backend.custom_exception.ResourceNotFoundException;
 import com.quickbite.backend.model.*;
 import com.quickbite.backend.principal.UserPrincipal;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.util.ResourceSet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -599,6 +601,61 @@ public class OrderService {
 
                     return pastOrderResponse;
                 }).toList();
+
+    }
+
+    public List<DeliveryPartnerLiveOrderResponse> getLiveOrdersOfCurrentDeliveryPartner() {
+        Authentication authObj = SecurityContextHolder.getContext().getAuthentication();
+        UserPrincipal userDetails = (UserPrincipal) authObj.getPrincipal();
+
+        Integer userId = userDetails.getUserId();
+        DeliveryPartner deliveryPartner = deliveryPartnerRepo.findByUserUserId(userId);
+
+        if(deliveryPartner == null){
+            throw new ResourceNotFoundException("Delivery partner not found.");
+        }
+
+        Integer deliveryPartnerId = deliveryPartner.getDeliveryPartnerId();
+
+        List<Order> rawOrderList = orderRepo.findByDeliveryPartnerId(deliveryPartnerId);
+        List<Order> filteredOrderList = rawOrderList.stream().filter(o -> o.getStatus() == OrderStatus.OUT_FOR_DELIVERY || o.getStatus() == OrderStatus.ARRIVED).toList();
+
+        List<DeliveryPartnerLiveOrderResponse> liveOrders = filteredOrderList.stream()
+                .map((order) -> {
+
+                    Integer orderId = order.getOrderId();
+                    List<Item> orderItems = orderItemRepo.findByOrderOrderId(orderId).stream().map((i) -> {
+                        Item item = new Item();
+                        item.setDishId(i.getDish().getDishId());
+                        item.setDishName(i.getDish().getName());
+                        item.setQty(i.getQty());
+                        item.setPrice(i.getPrice());
+                        item.setTotal(i.getTotal());
+
+                        return item;
+                    }).toList();
+
+
+                    DeliveryPartnerLiveOrderResponse orderResponse = new DeliveryPartnerLiveOrderResponse();
+                    orderResponse.setOrderId(orderId);
+                    orderResponse.setStatus(order.getStatus());
+                    orderResponse.setRestaurantId(order.getRestaurant().getRestaurantId());
+                    orderResponse.setRestaurantName(order.getRestaurant().getName());
+                    orderResponse.setCustomerId(order.getUserId());
+                    AppUser user = userRepo.findById(order.getUserId()).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+                    orderResponse.setCustomerName(user.getName()); // customer name
+                    orderResponse.setCustomerAddress(user.getAddress());
+                    orderResponse.setItems(orderItems);
+                    orderResponse.setTotal(order.getTotal());
+
+                    return orderResponse;
+                }).toList();
+
+        if (liveOrders.isEmpty()) {
+            throw new ResourceNotFoundException("You dont have any live ongoing orders.Thankyou");
+        }
+
+        return liveOrders;
 
     }
 }
